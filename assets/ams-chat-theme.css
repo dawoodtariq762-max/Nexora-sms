@@ -515,3 +515,144 @@ html.ams-dark .brand img, body.ams-dark .brand img{ background:#f4f7fc; border-r
    frame p95 29.9 -> 23.6 ms at 4x CPU throttle). Off-screen ticks skip their transition. */
 .msgs{ will-change:scroll-position; }
 .tick.instant, .tick.instant *{ transition:none !important; }
+
+/* ============================================================================
+   NEXORA SKIN (2026-11) — matches the NEXORA SMS Panel look.
+   ----------------------------------------------------------------------------
+   Presentation only: no class, id, markup or script is touched, so PIN lock,
+   receipts (1 grey / 2 grey / 2 blue), unread counts, sound and attachment auth
+   behave exactly as before. Still no blur/filters: only flat colours, gradients
+   and transform/opacity motion, so it stays light on low-end phones.
+   Light and dark share the same layout; the conversation list (navy sidebar)
+   and the lock screen are IDENTICAL in both themes.
+   ========================================================================== */
+:root,
+html.ams-light,
+body.ams-light {
+  --ch-canvas:#eaf3ff;
+  --ch-page:linear-gradient(160deg,#e7f1ff 0%,#f4f9ff 48%,#e3eeff 100%);
+  --ch-surface:#ffffff; --ch-surface-2:#f1f6ff; --ch-surface-3:#e4eeff;
+  --ch-line:#dbe8ff; --ch-line-strong:#bfd3f5;
+  --ch-ink:#0b2147; --ch-ink-2:#3a5388; --ch-ink-3:#566f9f;
+  --ch-brand:#0a63f0; --ch-brand-ink:#ffffff; --ch-brand-soft:#e3eeff; --ch-brand-text:#0a52c4;
+  --ch-ring:rgba(10,99,240,.30);
+  --ch-other:#ffffff; --ch-other-line:#dbe8ff;
+  --ch-own-ink:#ffffff; --ch-own-meta:#d2e2ff; --ch-own-line:transparent;
+  --ch-own-att-bg:rgba(255,255,255,.14); --ch-own-att-line:rgba(255,255,255,.28);
+  --ch-topbar:rgba(255,255,255,.78);
+  --ch-card-shadow:0 8px 24px rgba(30,100,220,.10);
+  --ch-shadow-pop:0 18px 44px rgba(20,70,170,.20), 0 2px 6px rgba(20,70,170,.08);
+  --ch-wave-op:1;
+}
+html.ams-dark,
+body.ams-dark {
+  --ch-canvas:#050f26;
+  --ch-page:linear-gradient(160deg,#050f26 0%,#0a1a3d 50%,#06142f 100%);
+  --ch-surface:#0d1c3e; --ch-surface-2:#12264f; --ch-surface-3:#183062;
+  --ch-line:#1f3466; --ch-line-strong:#2e4d8f;
+  --ch-ink:#e6eefc; --ch-ink-2:#b6ccf2; --ch-ink-3:#8fa8d6;
+  --ch-brand:#3b8dff; --ch-brand-ink:#ffffff; --ch-brand-soft:#14284f; --ch-brand-text:#8fc0ff;
+  --ch-ring:rgba(59,141,255,.45);
+  --ch-other:#12264f; --ch-other-line:#1f3466;
+  --ch-own-ink:#ffffff; --ch-own-meta:#c6d9ff; --ch-own-line:transparent;
+  --ch-own-att-bg:rgba(255,255,255,.12); --ch-own-att-line:rgba(255,255,255,.22);
+  --ch-topbar:rgba(8,20,48,.82);
+  --ch-card-shadow:0 8px 24px rgba(0,0,0,.35);
+  --ch-shadow-pop:0 18px 44px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.4);
+  --ch-wave-op:.35;
+}
+
+/* ---- page canvas + decorative wave (hidden on low-end / "animations off") ---- */
+html{ background:var(--ch-canvas); }
+.app{ position:relative; background:var(--ch-page); }
+.app::before{ content:""; position:absolute; top:0; right:0; width:62%; height:260px; z-index:0; pointer-events:none; opacity:var(--ch-wave-op);
+  background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 800 300%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%238cc4ff%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.6%22 stop-color=%22%236fb2ff%22 stop-opacity=%22.45%22/%3E%3Cstop offset=%221%22 stop-color=%22%233b8dff%22 stop-opacity=%22.55%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d=%22M0 120C160 130 260 40 420 70C560 98 650 40 800 30L800 0L0 0Z%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M0 150C170 170 270 80 430 108C570 134 660 80 800 70%22 fill=%22none%22 stroke=%22%23fff%22 stroke-opacity=%22.9%22 stroke-width=%222%22/%3E%3Cpath d=%22M0 175C180 190 280 110 440 140C580 165 670 115 800 108%22 fill=%22none%22 stroke=%22%234da3ff%22 stroke-opacity=%22.35%22 stroke-width=%221.5%22/%3E%3C/svg%3E") no-repeat top right / 100% 100%; }
+html.ds-lite .app::before{ display:none; }
+.thread,.composer,.msgs{ background:transparent; }
+
+/* ---- top bar ---- */
+.topbar{ position:relative; z-index:2; background:var(--ch-topbar); border-bottom:1px solid var(--ch-line); box-shadow:0 8px 24px rgba(30,100,220,.07); }
+.brand-text [data-brand]{ font-weight:800; letter-spacing:.06em; color:var(--ch-ink); }
+.brand-text small{ letter-spacing:.2em; text-transform:uppercase; font-size:10.5px; font-weight:600; color:var(--ch-brand-text); }
+.tool{ background:var(--ch-surface); border:1px solid var(--ch-line); border-radius:999px; box-shadow:0 4px 12px rgba(30,100,220,.08); }
+.tool:hover{ background:var(--ch-surface-3); }
+
+/* ---- conversation list = the NEXORA navy sidebar (same in light + dark) ---- */
+.list{
+  --ch-ink:#ffffff; --ch-ink-2:#dbe8ff; --ch-ink-3:#a4bff0; --ch-brand-text:#9cc8ff; --ch-attn-text:#ffb066;
+  --ch-surface:#0a2a6e; --ch-surface-2:rgba(255,255,255,.09); --ch-surface-3:rgba(255,255,255,.15);
+  --ch-line:rgba(160,200,255,.22); --ch-line-strong:rgba(160,200,255,.38);
+  --ch-admin-bg:#ece6ff; --ch-admin-fg:#4b2bb0; --ch-manager-bg:#d9f3ee; --ch-manager-fg:#0b6b5e; --ch-agent-bg:#dce9ff; --ch-agent-fg:#0b4fc2;
+  background:radial-gradient(130% 30% at 0% 0%,rgba(38,130,255,.55),transparent 62%),
+             url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 300%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232a8cff%22 stop-opacity=%22.5%22/%3E%3Cstop offset=%221%22 stop-color=%22%230a3aa8%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23f6c556%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23f6c556%22/%3E%3Cstop offset=%221%22 stop-color=%22%23f6c556%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d=%22M0 110C60 60 130 150 240 80L240 300L0 300Z%22 fill=%22url(%23a)%22/%3E%3Cpath d=%22M0 190C70 140 150 230 240 150L240 300L0 300Z%22 fill=%22%231c6cf0%22 fill-opacity=%22.28%22/%3E%3Cpath d=%22M-10 245C60 170 150 270 250 175%22 fill=%22none%22 stroke=%22%237cc0ff%22 stroke-opacity=%22.55%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M-10 205C70 140 150 230 250 140%22 fill=%22none%22 stroke=%22%23fff%22 stroke-opacity=%22.2%22 stroke-width=%221.2%22/%3E%3Cpath d=%22M-10 275C80 210 160 290 250 215%22 fill=%22none%22 stroke=%22%234da3ff%22 stroke-opacity=%22.45%22 stroke-width=%221.4%22/%3E%3Cpath d=%22M28 215C80 198 135 190 200 186%22 fill=%22none%22 stroke=%22url(%23b)%22 stroke-width=%222.2%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") bottom center / 100% 300px no-repeat,
+             linear-gradient(180deg,#0a2f7a 0%,#07245f 38%,#051a4b 100%);
+  border-right:0; box-shadow:10px 0 36px rgba(8,40,120,.20); color:#fff; }
+.list-head{ padding:20px 20px 12px; font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#8fb4f0; }
+.conv{ --ring:#08246a; border-radius:14px; }
+.conv:hover{ --ring:#173f8f; }
+.conv.on,.conv.on:hover{ --ring:#1672f5; --ch-ink-3:#e6f0ff; --ch-ink-2:#ffffff;
+  background:linear-gradient(90deg,#1f86ff 0%,#0a63f0 100%); box-shadow:0 8px 22px rgba(18,110,255,.5),inset 0 1px 0 rgba(255,255,255,.35); }
+.conv.on::before{ display:none; }
+.conv.on.unread .ctime{ color:#fff; }
+.conv.on .badge{ background:#fff; color:#0a3fb0; }
+.av{ border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+
+/* ---- thread header ---- */
+.thead{ position:relative; z-index:1; background:var(--ch-topbar); border-bottom:1px solid var(--ch-line); box-shadow:0 8px 24px rgba(30,100,220,.06); }
+.tname{ color:var(--ch-ink); font-weight:800; }
+.iconbtn:hover{ background:var(--ch-surface-3); }
+
+/* ---- bubbles ---- */
+.msg{ --r:20px; box-shadow:0 4px 14px rgba(30,100,220,.08); }
+.msg.mine{ background:linear-gradient(135deg,#083fb0 0%,#0f5be8 100%); border-color:transparent; box-shadow:0 8px 20px rgba(10,80,220,.28); }
+.msg.mine .who{ color:#cfe1ff; }
+.msg.mine .att-bar i{ background:#fff; }
+.msg.mine .tick{ color:#c3d4f5; }            /* sent + delivered: grey-white */
+.msg.mine .tick.read{ color:#62e6ff; }         /* read: bright cyan-blue */
+.msg.emoji-only,.msg.mine.emoji-only{ background:transparent; box-shadow:none; border-color:transparent; }
+.msg.mine.emoji-only .mfoot{ --meta:var(--ch-ink-3); }
+.msg.mine.emoji-only .tick{ color:var(--ch-tick-grey); } .msg.mine.emoji-only .tick.read{ color:var(--ch-tick-blue); }
+.day{ background:var(--ch-surface); box-shadow:0 2px 8px rgba(30,100,220,.06); }
+.newdiv span{ background:var(--ch-brand-soft); }
+
+/* ---- composer ---- */
+.cbox{ border-radius:999px; padding:5px; background:var(--ch-surface); border:1px solid var(--ch-line-strong); box-shadow:0 10px 30px rgba(30,100,220,.12); }
+.send{ width:42px; height:42px; background:linear-gradient(180deg,#2f8bff,#0a63f0); color:#fff; box-shadow:0 6px 16px rgba(10,99,240,.4); }
+.send:disabled{ box-shadow:none; }
+.send.busy:disabled{ background:linear-gradient(180deg,#2f8bff,#0a63f0); color:#fff; }
+.emojipanel{ border-radius:20px; }
+.chip{ border-radius:14px; }
+.jump{ border-color:var(--ch-brand); color:var(--ch-brand-text); }
+
+/* ---- buttons / badges ---- */
+.btn{ border-radius:14px; }
+.btn.primary{ background:linear-gradient(180deg,#2f8bff,#0a63f0); color:#fff; box-shadow:0 8px 18px rgba(10,99,240,.30); }
+.btn.primary:hover{ filter:none; box-shadow:0 10px 22px rgba(10,99,240,.42); }
+.state .art{ color:var(--ch-brand); }
+
+/* ---- PIN lock: opaque navy screen (same in both themes), glass card ---- */
+.lockwrap[data-mode="locked"]{
+  background:radial-gradient(120% 40% at 0% 0%,rgba(38,130,255,.5),transparent 60%),
+             url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 300%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232a8cff%22 stop-opacity=%22.5%22/%3E%3Cstop offset=%221%22 stop-color=%22%230a3aa8%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23f6c556%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23f6c556%22/%3E%3Cstop offset=%221%22 stop-color=%22%23f6c556%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d=%22M0 110C60 60 130 150 240 80L240 300L0 300Z%22 fill=%22url(%23a)%22/%3E%3Cpath d=%22M0 190C70 140 150 230 240 150L240 300L0 300Z%22 fill=%22%231c6cf0%22 fill-opacity=%22.28%22/%3E%3Cpath d=%22M-10 245C60 170 150 270 250 175%22 fill=%22none%22 stroke=%22%237cc0ff%22 stroke-opacity=%22.55%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M-10 205C70 140 150 230 250 140%22 fill=%22none%22 stroke=%22%23fff%22 stroke-opacity=%22.2%22 stroke-width=%221.2%22/%3E%3Cpath d=%22M-10 275C80 210 160 290 250 215%22 fill=%22none%22 stroke=%22%234da3ff%22 stroke-opacity=%22.45%22 stroke-width=%221.4%22/%3E%3Cpath d=%22M28 215C80 198 135 190 200 186%22 fill=%22none%22 stroke=%22url(%23b)%22 stroke-width=%222.2%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") bottom center / 100% 340px no-repeat,
+             linear-gradient(180deg,#0a2f7a 0%,#07245f 45%,#051a4b 100%); }
+.lockcard{ border-radius:28px; background:var(--ch-surface); border:1px solid rgba(255,255,255,.7); box-shadow:0 30px 70px rgba(4,20,70,.45); }
+html.ams-dark .lockcard,body.ams-dark .lockcard{ border-color:#1f3466; }
+.lock-ico{ width:60px; height:60px; border-radius:50%; color:#fff; background:radial-gradient(circle at 30% 25%,#3b94ff,#0a3a9a 78%);
+  box-shadow:0 10px 24px rgba(10,70,200,.40),inset 0 2px 4px rgba(255,255,255,.35); }
+.lockcard h3{ color:var(--ch-ink); font-weight:800; }
+.lockfield input{ border-radius:14px; background:var(--ch-surface-2); }
+
+/* ---- small screens: the list screen keeps the navy look edge to edge ---- */
+@media (max-width:860px){ .app::before{ width:100%; height:200px; } .list{ box-shadow:none; } }
+
+.list .pdot{ background:#7a93c4; }
+.list .pdot.online{ background:var(--ch-online); }
+
+/* REFERENCE-MATCH PASS (chat) — same deep-navy sidebar + ribbons as the panel (both themes) */
+.list{ background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 220%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E %3ClinearGradient id=%22t%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2327c0ff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%230a5fe6%22 stop-opacity=%22.55%22/%3E%3Cstop offset=%221%22 stop-color=%22%230a3fb8%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22s%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%237fe0ff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%221%22 stop-color=%22%237fe0ff%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d=%22M0 0H118C58 26 24 84 40 220H0Z%22 fill=%22url(%23t)%22/%3E %3Cpath d=%22M0 0H64C28 42 14 104 20 220H0Z%22 fill=%22%2335cbff%22 opacity=%22.28%22/%3E %3Cpath d=%22M118 0C58 26 24 84 40 220%22 fill=%22none%22 stroke=%22url(%23s)%22 stroke-width=%221.6%22/%3E%3C/svg%3E") top left / 100% 170px no-repeat, url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 340%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E %3ClinearGradient id=%22a%22 x1=%220%22 y1=%221%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%230a4fd8%22/%3E%3Cstop offset=%22.6%22 stop-color=%22%231596ff%22/%3E%3Cstop offset=%221%22 stop-color=%22%233fd6ff%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%230b5fe0%22 stop-opacity=%220%22/%3E%3Cstop offset=%221%22 stop-color=%22%230b5fe0%22 stop-opacity=%22.55%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23f6b93b%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23f6b93b%22/%3E%3Cstop offset=%221%22 stop-color=%22%23f6b93b%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d=%22M0 150C50 120 110 150 170 110C200 90 225 60 240 30V340H0Z%22 fill=%22url(%23b)%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30V54C225 84 205 114 168 142C115 184 55 242 0 234Z%22 fill=%22url(%23a)%22 opacity=%22.6%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30%22 fill=%22none%22 stroke=%22%236fdcff%22 stroke-width=%221.6%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30%22 fill=%22none%22 stroke=%22%2327c0ff%22 stroke-width=%227%22 opacity=%22.22%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235V340H0Z%22 fill=%22%230b57d6%22 opacity=%22.4%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235%22 fill=%22none%22 stroke=%22%232fd0ff%22 stroke-width=%222%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235%22 fill=%22none%22 stroke=%22%2327c0ff%22 stroke-width=%228%22 opacity=%22.2%22/%3E %3Cpath d=%22M0 306C70 284 150 334 240 292%22 fill=%22none%22 stroke=%22%231ad0ff%22 stroke-width=%222.4%22/%3E %3Cpath d=%22M34 240C85 222 142 216 204 222%22 fill=%22none%22 stroke=%22url(%23g)%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") bottom left / 100% 250px no-repeat,
+  linear-gradient(180deg,#02195a 0%,#011542 26%,#011542 74%,#011a52 100%); border-radius:0 28px 28px 0; box-shadow:inset -1px 0 0 rgba(120,200,255,.28),8px 0 30px rgba(10,60,180,.25); }
+.conv.on,.conv.on:hover{ background:linear-gradient(90deg,#10a2ff 0%,#0a86fa 100%); box-shadow:0 0 24px rgba(20,150,255,.5),inset 0 1px 0 rgba(255,255,255,.4); }
+.lockwrap[data-mode="locked"]{ background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 220%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E %3ClinearGradient id=%22t%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%2327c0ff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%230a5fe6%22 stop-opacity=%22.55%22/%3E%3Cstop offset=%221%22 stop-color=%22%230a3fb8%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22s%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%237fe0ff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%221%22 stop-color=%22%237fe0ff%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d=%22M0 0H118C58 26 24 84 40 220H0Z%22 fill=%22url(%23t)%22/%3E %3Cpath d=%22M0 0H64C28 42 14 104 20 220H0Z%22 fill=%22%2335cbff%22 opacity=%22.28%22/%3E %3Cpath d=%22M118 0C58 26 24 84 40 220%22 fill=%22none%22 stroke=%22url(%23s)%22 stroke-width=%221.6%22/%3E%3C/svg%3E") top left / 100% 220px no-repeat, url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 240 340%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E %3ClinearGradient id=%22a%22 x1=%220%22 y1=%221%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%230a4fd8%22/%3E%3Cstop offset=%22.6%22 stop-color=%22%231596ff%22/%3E%3Cstop offset=%221%22 stop-color=%22%233fd6ff%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%230b5fe0%22 stop-opacity=%220%22/%3E%3Cstop offset=%221%22 stop-color=%22%230b5fe0%22 stop-opacity=%22.55%22/%3E%3C/linearGradient%3E %3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%23f6b93b%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23f6b93b%22/%3E%3Cstop offset=%221%22 stop-color=%22%23f6b93b%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d=%22M0 150C50 120 110 150 170 110C200 90 225 60 240 30V340H0Z%22 fill=%22url(%23b)%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30V54C225 84 205 114 168 142C115 184 55 242 0 234Z%22 fill=%22url(%23a)%22 opacity=%22.6%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30%22 fill=%22none%22 stroke=%22%236fdcff%22 stroke-width=%221.6%22/%3E %3Cpath d=%22M0 205C60 215 130 150 190 95C215 72 232 50 240 30%22 fill=%22none%22 stroke=%22%2327c0ff%22 stroke-width=%227%22 opacity=%22.22%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235V340H0Z%22 fill=%22%230b57d6%22 opacity=%22.4%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235%22 fill=%22none%22 stroke=%22%232fd0ff%22 stroke-width=%222%22/%3E %3Cpath d=%22M0 262C60 232 140 300 240 235%22 fill=%22none%22 stroke=%22%2327c0ff%22 stroke-width=%228%22 opacity=%22.2%22/%3E %3Cpath d=%22M0 306C70 284 150 334 240 292%22 fill=%22none%22 stroke=%22%231ad0ff%22 stroke-width=%222.4%22/%3E %3Cpath d=%22M34 240C85 222 142 216 204 222%22 fill=%22none%22 stroke=%22url(%23g)%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") bottom left / 100% 300px no-repeat,
+  linear-gradient(180deg,#02195a 0%,#011542 40%,#011a52 100%); }
+.app::before{ background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 900 320%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E %3ClinearGradient id=%22w%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%238ec5ff%22 stop-opacity=%220%22/%3E%3Cstop offset=%22.45%22 stop-color=%22%234aa3ff%22 stop-opacity=%22.45%22/%3E%3Cstop offset=%221%22 stop-color=%22%231a6dff%22 stop-opacity=%22.75%22/%3E%3C/linearGradient%3E%3C/defs%3E %3Cpath d=%22M0 200C160 214 300 80 470 92C620 104 730 40 900 0V130C760 124 650 196 500 196C330 196 180 288 0 240Z%22 fill=%22url(%23w)%22/%3E %3Cpath d=%22M0 200C160 214 300 80 470 92C620 104 730 40 900 0%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%223%22 opacity=%22.95%22/%3E %3Cpath d=%22M0 240C180 288 330 196 500 196C650 196 760 124 900 130%22 fill=%22none%22 stroke=%22%234da3ff%22 stroke-width=%221.6%22 opacity=%22.5%22/%3E%3C/svg%3E") no-repeat top right / 100% 100%; height:300px; }
+@media (max-width:860px){ .list{ border-radius:0; } }
