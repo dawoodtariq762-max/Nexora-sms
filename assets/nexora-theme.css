@@ -154,8 +154,8 @@ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.tag,.badge){ border-rad
 .nx-tab{ appearance:none; border:0; background:transparent; color:#3a5a95; font:600 13px 'Inter',system-ui,sans-serif; padding:7px 18px; border-radius:999px; cursor:pointer; transition:background .2s,color .2s; }
 .nx-tab.on{ background:linear-gradient(180deg,#2f8bff,#0a63f0); color:#fff; box-shadow:0 6px 14px rgba(10,99,240,.35); }
 .nx-pill{ display:inline-block; padding:7px 14px; border-radius:12px; background:#f3f8ff; border:1px solid #e0ecff; font-size:13px; font-weight:500; color:#27427f; }
-.nx-stats{ display:flex; gap:0; margin:2px 0 8px; }
-.nx-stats > div{ padding:0 22px; border-left:1px solid #dbe8ff; } .nx-stats > div:first-child{ padding-left:4px; border-left:0; }
+.nx-stats{ display:flex; flex-wrap:wrap; gap:0; margin:2px 0 8px; }
+.nx-stats > div{ padding:0 22px; border-left:1px solid #dbe8ff; min-width:0; } .nx-stats > div:first-child{ padding-left:4px; border-left:0; }
 .nx-stats small{ display:block; white-space:nowrap; font-size:13px; color:#3a5a95; } .nx-stats b{ display:block; font-size:24px; font-weight:800; color:#0b2a6b; line-height:1.25; }
 .nx-chart{ width:100%; height:auto; display:block; overflow:visible; }
 .nx-chart text{ font:500 11.5px 'Inter',system-ui,sans-serif; fill:#4a639b; }
@@ -177,6 +177,17 @@ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.tag,.badge){ border-rad
 @keyframes nx-rise{ from{ opacity:0; transform:translateY(10px); } }
 @media (max-width:1250px){ .nx-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:1100px){ .nx-grid,.nx-month{ grid-template-columns:1fr; } }
+/* Narrow desktop: keep the three weekly figures inside their card instead of
+   letting the last one spill past the panel edge (seen at ~1150px width). */
+@media (max-width:1220px){
+  .nx-stats > div{ padding:0 14px; }
+  .nx-stats small{ font-size:12px; }
+  .nx-stats b{ font-size:21px; }
+}
+@media (max-width:560px){
+  .nx-stats > div{ padding:0 10px; }
+  .nx-stats small{ font-size:11.5px; }
+}
 @media (max-width:560px){ .nx-kpis{ grid-template-columns:1fr; } .nx-stats > div{ padding:0 14px; } .nx-greet h1{ font-size:21px; } }
 @media (prefers-reduced-motion:reduce){ .nx-kpi,.nx-card{ animation:none; } }
 @media (max-width:900px){ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .main, html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .appbar ~ .content, html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .appbar + .content{ margin-left:0 !important; } html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .main::before{ width:100vw; } }
@@ -288,10 +299,19 @@ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar):
    2) Brand tile: .logo had overflow:hidden while the img was larger than the
       tile, so the new NEXORA mark was clipped on its right edge.
    ========================================================================== */
+/* .content must never be wider than the space the sidebar leaves.
+   NOTE: the cap may only apply while the sidebar is actually beside the
+   content. Below 901px the manager panel hides the sidebar and its
+   margin-left becomes 0 — a `calc(100vw - 240px)` cap there squeezed the
+   whole panel into ~190px on a 430px phone. Hence the media query. */
 html body.ams-panel > .content{
   box-sizing:border-box!important;
   width:auto!important;
-  max-width:calc(100vw - var(--nx-sbw, 240px))!important;
+}
+@media (min-width:901px){
+  html body.ams-panel > .content{
+    max-width:calc(100vw - var(--nx-sbw, 240px))!important;
+  }
 }
 html body.ams-panel .logo{
   overflow:visible!important;
@@ -405,3 +425,14 @@ html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card{
 }
 html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card :is(h3){ color:#f1f5f9!important; }
 html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card :is(p,span,.stat-info span){ color:#94a3b8!important; }
+
+/* MOBILE FIT (2026-11-11) — the manager panel's .content is a direct child of
+<body>, so it never got the padding-box the admin/agent/client panels get from
+their .main wrapper. On phones the cards/tables ran to the screen edge. This
+mirrors the same mobile gutter the other panels already use. Desktop untouched. */
+@media (max-width:900px){
+  html body.ams-panel > .content{
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+}
