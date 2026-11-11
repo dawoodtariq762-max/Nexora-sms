@@ -8,8 +8,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 <meta name="color-scheme" content="light dark" />
 <meta name="theme-color" content="#ffffff" id="metaTheme" />
-<link rel="icon" type="image/png" href="/assets/nexora-favicon.png" data-brand-favicon />
-<link rel="stylesheet" href="/assets/ams-chat-theme.css?v=ams-20261026-fullrebrand-final" />
+<link rel="icon" type="image/png" href="/assets/nexora-favicon.png?v=nx-logo-20261111" data-brand-favicon />
+<link rel="stylesheet" href="/assets/ams-chat-theme.css?v=nx-20261111b" />
 <title>Chat — NEXORA SMS PANEL</title>
 <script>
 /* Auth guard — chat is for Admin / Manager / Agent only (spec 3A).
@@ -53,13 +53,14 @@
 })();
 </script>
 <style id="route-auth-hide">html{visibility:hidden;}</style>
-<link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261110"/>
+<link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
 </head>
 <body>
 <div class="app" id="app">
   <header class="topbar">
     <div class="brand">
-      <img src="/assets/nexora-logo-trim.png" alt="" data-brand-logo />
+      <img src="/assets/nexora-logo-trim.png?v=nx-logo-20261111" alt="" data-brand-logo />
       <div class="brand-text"><span data-brand="name">NEXORA</span><small>Chat</small></div>
     </div>
     <div class="spacer"></div>
@@ -117,13 +118,14 @@
       <div class="composer" id="composer" hidden>
         <div class="pending" id="pending" aria-live="polite"></div>
         <div class="cbox" id="cbox">
-          <button type="button" class="iconbtn" id="btnAttach" aria-label="Attach a file" title="Attach TXT, CSV or video"><span data-ico="clip"></span></button>
+          <button type="button" class="iconbtn" id="btnAttach" aria-label="Attach an image or file" title="Attach an image or file"><span data-ico="clip"></span></button>
           <textarea id="input" rows="1" placeholder="Write a message" aria-label="Message" dir="auto" enterkeyhint="send" autocapitalize="sentences"></textarea>
           <button type="button" class="iconbtn" id="btnEmoji" aria-label="Emoji" title="Emoji" aria-haspopup="true" aria-expanded="false" aria-controls="emojiPanel"><span data-ico="smile"></span></button>
           <button type="button" class="send" id="btnSend" aria-label="Send message" title="Send" disabled><span data-ico="send"></span><span class="spin" aria-hidden="true"></span></button>
         </div>
         <div class="emojipanel" id="emojiPanel" role="group" aria-label="Emoji"></div>
-        <input type="file" id="fileInput" style="display:none" accept=".txt,.text,.csv,.mp4,.webm,.mov,.avi,.mkv" />
+        <input type="file" id="fileInput" style="display:none" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif,.txt,.text,.csv,.mp4,.webm,.mov,.avi,.mkv" multiple />
+        <input type="file" id="imageInput" style="display:none" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" />
       </div>
     </section>
   </div>
@@ -193,6 +195,7 @@ function reduced(){
 var IC = {
   send:'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
   clip:'<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
   smile:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/>',
   lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
@@ -390,11 +393,12 @@ function fmtSize(n){
 }
 function attKind(name, mime){
   var s = String(name||'').toLowerCase(); mime = String(mime||'');
+  if(/^image\//.test(mime) || /\.(png|jpe?g|webp|gif)$/.test(s)) return 'image';
   if(/\.csv$/.test(s) || /csv/.test(mime)) return 'csv';
   if(/\.(mp4|webm|mov|avi|mkv)$/.test(s) || /^video\//.test(mime)) return 'video';
   return 'txt';
 }
-var KIND_ICON = { csv:'table', video:'video', txt:'file' }, KIND_LABEL = { csv:'CSV', video:'Video', txt:'Text' };
+var KIND_ICON = { image:'image', csv:'table', video:'video', txt:'file' }, KIND_LABEL = { image:'Photo', csv:'CSV', video:'Video', txt:'Text' };
 function firstChar(s){ var m = String(s||'').trim().match(/^[\uD800-\uDBFF][\uDC00-\uDFFF]|^[\s\S]/); return m ? m[0].toUpperCase() : '?'; }
 function cap(s){ s = String(s||''); return s.charAt(0).toUpperCase() + s.slice(1); }
 function badgeText(n){ return n > 99 ? '99+' : String(n); }
@@ -569,6 +573,17 @@ function posOf(msgs, i, st){
 
 function attHTML(a){
   var k = attKind(a.name, a.mime);
+  /* Images are shown, not downloaded: a real <img> inside the bubble that
+     opens a larger preview on click. The bytes are fetched with the bearer
+     token (a plain <img src> cannot send it) and swapped in from a blob URL;
+     the placeholder keeps the bubble height stable while it loads. */
+  if(k === 'image'){
+    return '<button type="button" class="att-img" data-att="'+esc(a.id)+'" data-name="'+esc(a.name||'')+'"'
+         +   ' aria-label="Open photo '+esc(a.name||'photo')+'">'
+         +   '<span class="ai-ph">'+ico('image')+'</span>'
+         +   '<img alt="'+esc(a.name||'Photo')+'" loading="lazy" />'
+         + '</button>';
+  }
   return '<button type="button" class="att-btn" data-att="'+esc(a.id)+'" data-name="'+esc(a.name||'')+'" data-state="idle"'
        +   ' aria-label="Download '+esc(a.name||'file')+'">'
        + '<span class="att-ico" data-kind="'+k+'">'+ico(KIND_ICON[k])+'</span>'
@@ -629,6 +644,68 @@ function paintHeader(){
   }
 }
 
+/* ---------------- inline images ----------------
+ * The attachment route needs an Authorization header, so <img src="/api/...">
+ * would be refused. Bytes are fetched once per attachment, cached as a blob
+ * URL, and painted into the bubble. Both participants get the same picture:
+ * the recipient simply loads it from the same authenticated route. */
+var imgCache = {};
+function loadMsgImages(root){
+  Array.prototype.forEach.call((root||document).querySelectorAll('.att-img'), function(btn){
+    if(btn.getAttribute('data-loaded') === '1') return;
+    var id = btn.getAttribute('data-att');
+    if(!id) return;
+    btn.setAttribute('data-loaded','1');
+    paintOneImage(btn, id);
+  });
+}
+function paintOneImage(btn, id){
+  function apply(url){
+    var img = btn.querySelector('img');
+    if(!img || !btn.isConnected){ return; }
+    img.onload = function(){
+      btn.classList.add('is-loaded');
+      /* keep the natural aspect ratio: never stretch or crop */
+      img.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+    };
+    img.onerror = function(){ btn.classList.add('is-error'); paintOneImage.lastError = true; };
+    img.src = url;
+  }
+  if(imgCache[id]) return apply(imgCache[id]);
+  fetch('/api/chatapp/attachments/'+encodeURIComponent(id)+'/download', { headers:{ Authorization:'Bearer '+TOKEN }, cache:'no-store' })
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.blob();
+    })
+    .then(function(b){
+      imgCache[id] = URL.createObjectURL(b);
+      apply(imgCache[id]);
+    })
+    .catch(function(){
+      btn.classList.add('is-error');
+      btn.querySelector('.ai-ph').innerHTML = ico('alert');
+    });
+}
+/* Larger preview (same idea as the Creator request modal). */
+function openImageLight(src, alt){
+  var box = document.getElementById('imgLight');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'imgLight'; box.className = 'imgl';
+    box.innerHTML = '<button type="button" class="imgl-x" aria-label="Close preview">'+ico('x')+'</button><img alt="" />';
+    document.body.appendChild(box);
+    box.addEventListener('click', function(e){
+      if(e.target === box || e.target.closest('.imgl-x')){ box.classList.remove('show'); }
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') box.classList.remove('show');
+    });
+  }
+  var im = box.querySelector('img');
+  im.src = src; im.alt = alt || '';
+  box.classList.add('show');
+}
+
 function renderThread(){
   var box = $('msgs');
   if(!current){
@@ -639,6 +716,7 @@ function renderThread(){
   $('emptyState').hidden = true; box.hidden = false; $('composer').hidden = false; $('thead').hidden = false;
   paintHeader();
   paintMessages();
+  loadMsgImages(box);
 }
 
 function paintMessages(){
@@ -667,8 +745,8 @@ function paintMessages(){
   }
   var inc = !switching && view.mode === 'list' && view.ids.length <= msgs.length
          && view.ids.every(function(id, i){ return msgs[i].id === id; });
-  if(inc){ patchReceipts(msgs); appendMessages(msgs); }
-  else rebuild(msgs, switching);
+  if(inc){ patchReceipts(msgs); appendMessages(msgs); loadMsgImages(box); }
+  else { rebuild(msgs, switching); loadMsgImages(box); }
 }
 
 function rebuild(msgs, switching){
@@ -965,8 +1043,35 @@ function addChip(u){
               + '<span class="chip-act" style="display:flex;align-items:center"></span>'
               + '<span class="cbar" aria-hidden="true"><i></i></span>';
   d.querySelector('.att-name').textContent = u.name;
+  /* an image gets a real preview thumbnail before it is sent */
+  if(k === 'image' && u.file){
+    d.setAttribute('data-image','1');
+    var ic = d.querySelector('.att-ico');
+    if(ic && window.URL && URL.createObjectURL){
+      try {
+        var thumb = document.createElement('img');
+        thumb.className = 'chip-thumb'; thumb.alt = '';
+        thumb.src = URL.createObjectURL(u.file);
+        ic.replaceWith(thumb);
+        u.thumbUrl = thumb.src;
+      } catch(e){}
+    }
+  }
   u.el = d; $('pending').appendChild(d); paintChip(u);
 }
+/* What the composer accepts. Images are the only thing shown as a picture. */
+var IMG_RE = /^image\/(png|jpe?g|webp|gif)$/i;
+var IMG_EXT_RE = /\.(png|jpe?g|webp|gif)$/i;
+function isImageFile(f){ return !!f && (IMG_RE.test(String(f.type||'')) || IMG_EXT_RE.test(String(f.name||''))); }
+function acceptIncoming(f){
+  if(!f) return;
+  if(f.size > 25 * 1024 * 1024){ showErr('“' + (f.name||'File') + '” is larger than 25 MB.'); return; }
+  var looksImage = isImageFile(f);
+  var okExt = IMG_EXT_RE.test(String(f.name||'')) || /\.(txt|text|csv|mp4|webm|mov|avi|mkv)$/i.test(String(f.name||''));
+  if(!looksImage && !okExt){ showErr('Unsupported file. Use a photo (PNG, JPG, WEBP), TXT, CSV or video.'); return; }
+  uploadFile(f);
+}
+
 function uploadFile(f){
   var u = { uid:++upSeq, name:f.name, size:f.size, file:f, pct:0, state:'uploading', error:'', attachment:null, xhr:null, el:null };
   uploads.push(u); addChip(u); paintSend();
@@ -994,6 +1099,7 @@ function removeUpload(uid){
   if(i < 0) return;
   var u = uploads[i];
   if(u.state === 'uploading' && u.xhr){ u.xhr.onload = u.xhr.onerror = null; try { u.xhr.abort(); } catch(e){} }
+  if(u.thumbUrl){ try { URL.revokeObjectURL(u.thumbUrl); } catch(e){} }
   uploads.splice(i, 1); paintSend();
   if(u.el){
     if(reduced()){ u.el.remove(); }
@@ -1372,9 +1478,51 @@ function start(){
   $('input').addEventListener('input', onInput);
   $('btnAttach').onclick = function(){ $('fileInput').click(); };
   $('fileInput').onchange = function(){
-    Array.prototype.forEach.call(this.files, function(f){ uploadFile(f); });
+    Array.prototype.forEach.call(this.files, function(f){ acceptIncoming(f); });
     this.value = '';
   };
+  if($('imageInput')) $('imageInput').onchange = function(){
+    Array.prototype.forEach.call(this.files, function(f){ acceptIncoming(f); });
+    this.value = '';
+  };
+
+  /* ---- paste (Ctrl+V) of a screenshot straight from the clipboard ----
+     Clipboard images arrive as a Blob with no filename, so one is made up:
+     pasted-photo-<timestamp>.png. The upload path is unchanged. */
+  function clipboardName(blob){
+    var ext = ({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'})[String(blob.type||'').toLowerCase()] || 'png';
+    return 'pasted-photo-' + Date.now() + '.' + ext;
+  }
+  document.addEventListener('paste', function(e){
+    if(!current) return;
+    var cd = e.clipboardData || window.clipboardData;
+    if(!cd || !cd.items) return;
+    var got = false;
+    Array.prototype.forEach.call(cd.items, function(it){
+      if(it.kind !== 'file' || !/^image\//i.test(it.type)) return;
+      var f = it.getAsFile();
+      if(!f) return;
+      got = true;
+      var named = new File([f], clipboardName(f), { type: f.type });
+      acceptIncoming(named);
+    });
+    if(got){ e.preventDefault(); }
+  });
+
+  /* ---- drag & drop an image onto the conversation ---- */
+  var dropZone = $('msgs');
+  ['dragenter','dragover'].forEach(function(ev){
+    dropZone.addEventListener(ev, function(e){ if(e.dataTransfer && e.dataTransfer.types.indexOf('Files') > -1){ e.preventDefault(); dropZone.classList.add('dragging'); } });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    dropZone.addEventListener(ev, function(e){ dropZone.classList.remove('dragging'); });
+  });
+  dropZone.addEventListener('drop', function(e){
+    if(!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    if(!current){ showErr('Open a conversation first.'); return; }
+    Array.prototype.forEach.call(e.dataTransfer.files, function(f){ acceptIncoming(f); });
+  });
   $('pending').addEventListener('click', function(e){
     var b = e.target.closest && e.target.closest('[data-act]'); if(!b) return;
     var chip = b.closest('.chip'), uid = chip && parseInt(chip.getAttribute('data-uid'), 10);
@@ -1447,6 +1595,15 @@ function start(){
   document.addEventListener('click', function(e){
     var retry = e.target && e.target.closest ? e.target.closest('[data-act="retry-thread"]') : null;
     if(retry){ if(current){ ui(current.id).err = ''; renderThread(); fetchMessages(current.id, 0); } return; }
+    /* inline photo → larger preview, never a download */
+    var pic = e.target && e.target.closest ? e.target.closest('.att-img') : null;
+    if(pic){
+      e.preventDefault();
+      var pid = pic.getAttribute('data-att');
+      if(pid && imgCache[pid]){ openImageLight(imgCache[pid], pic.getAttribute('data-name')); }
+      else if(pid){ paintOneImage(pic, pid); }
+      return;
+    }
     var b = e.target && e.target.closest ? e.target.closest('.att-btn') : null;
     if(!b) return;
     e.preventDefault();

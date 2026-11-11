@@ -224,6 +224,8 @@ const heavyWriteLimit = rateLimit({ windowMs: 60000, max: parseInt(process.env.H
 app.use('/api', (req, res, next) => {
   const p = req.path;
   if (p === '/health' || p === '/login' || p.startsWith('/incoming-sms')) return next();
+  /* public Creator registration carries its own, stricter limiter (12 / 10 min / IP) */
+  if (p === '/creator/register') return next();
   return apiRateLimit(req, res, next);
 });
 app.use('/api/numbers', (req, res, next) => {
@@ -498,6 +500,10 @@ app.get('/test', (req, res) => sendFrontendPage(res, 'test.html'));
 app.get('/test.html', (req, res) => res.redirect(301, '/test'));
 app.get('/test/:page', (req, res) => sendFrontendPage(res, 'test.html'));
 
+/* Creator Account — public, self-service registration (no login required) */
+app.get('/creator-register', (req, res) => sendFrontendPage(res, 'creator-register.html'));
+app.get('/creator-register.html', (req, res) => res.redirect(301, '/creator-register'));
+
 /* Panel Branding — its own login and its own panel. These are exact routes so
    they never shadow the /branding/runtime.* and /branding/asset/* endpoints. */
 app.get('/branding-login', (req, res) => sendFrontendPage(res, 'branding-login.html'));
@@ -519,6 +525,23 @@ const brandingPanel = require('./branding')(app, { db, SECRET, logAction });
 require('./extapi')(app, { authRequired, requireRole, logAction, rateLimit });
 /* Chat system: Admin <-> Manager <-> Agent, SSE delivery, attachments */
 require('./chatapp')(app, { authRequired, requireRole, logAction, rateLimit });
+/* Creator Account registration + Admin Request Panel.
+   Memory-buffered upload so the screenshot can be validated by magic bytes
+   before anything touches the disk. Nothing else in the app is affected. */
+const creatorUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024, files: 1 },
+}).single('screenshot');
+const creatorRequests = require('./creatorRequests')(app, {
+  db, authRequired, requireRole, logAction, rateLimit,
+  rawUpload: (opts) => (req, res, next) => creatorUpload(req, res, (err) => {
+    if (!err) return next();
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? `Screenshot is too large (max ${opts && opts.maxBytes ? Math.round(opts.maxBytes / 1048576) : 8} MB).`
+      : 'Upload failed: ' + err.message;
+    return res.status(413).json({ error: msg, field: 'screenshot' });
+  }),
+});
 /* Download filenames use the central brand name (Req 7). Falls back to
    "ams-sms" if branding is unavailable, so an export can never fail on it. */
 const brandSlug = () => { try { return brandingPanel.brandSlug(); } catch (e) { return 'ams-sms'; } };
@@ -7182,6 +7205,8 @@ const PORT = process.env.PORT || 4000;
   await db.init();
   createTables();
   seed();
+  /* Creator Account registration table (idempotent, additive only) */
+  try { creatorRequests.ensureSchema(); } catch (e) { console.warn('[creator] schema:', e.message); }
   /* Section 7: authoritative real-provider links (idempotent; exact matches only). */
   syncRangeProviderLinks();
   // PHASE-2 optional process split: AMS_ROLE=api runs web-only (no timers);

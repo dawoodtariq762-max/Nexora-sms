@@ -306,14 +306,15 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
 
 <script src="/assets/number-copy.js?v=ams-20261026-fullrebrand-final"></script>
 <link rel="stylesheet" href="/assets/ams-motion.css?v=ams-20261026-fullrebrand-final"/><script src="/assets/ams-motion.js?v=ams-20261026-fullrebrand-final" defer></script>
-<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261101-admin-report-fixes1"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261110"/><script src="/assets/nexora-dashboard.js?v=nx-20261110" defer></script>
+<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261101-admin-report-fixes1"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script><script src="/assets/nexora-requests.js?v=nx-20261111b" defer></script>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
 </head>
 <body class="ams-light ams-panel ams-ui">
 <div class="layout">
   <!-- ================= SIDEBAR ================= -->
   <aside class="sidebar" id="sidebar">
     <div class="sb-brand">
-      <div class="sb-logo"><img class="ams-sms-logo-img" data-brand-logo src="/assets/nexora-logo-square.png?v=ams-20261009" alt="NEXORA" /></div>
+      <div class="sb-logo"><img class="ams-sms-logo-img" data-brand-logo src="/assets/nexora-logo-square.png?v=nx-logo-20261111" alt="NEXORA" /></div>
       <div><h1 data-brand="name">NEXORA</h1><small>SMS Panel</small></div>
     </div>
     <nav class="sb-nav">
@@ -344,6 +345,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
         <div class="sub-item" data-page="clients"><span class="dot"></span> Clients</div>
         
       </div>
+      <div class="nav-item" data-page="requests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a2 2 0 0 1 2 2v0h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V5a2 2 0 0 1 2-2z"/><path d="M9 12h6M9 16h4"/></svg><span class="lbl">Request Panel</span><span class="nxr-nav-badge" id="nxrNavBadge" style="display:none;margin-left:auto;background:#d93a4e;color:#fff;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 7px;line-height:1.6"></span></div>
 
       <div class="sb-section">Reports</div>
       <div class="nav-item" id="cdrParent" onclick="toggleSub('cdrSub','cdrParent')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg><span>SMS CDR Stats</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -509,6 +511,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
       </section>
 
       <!-- USER PAGES (built via JS) -->
+      <section class="page" id="page-requests"></section>
       <section class="page" id="page-managers"></section>
       <section class="page" id="page-agents"></section>
       <section class="page" id="page-clients"></section>
@@ -769,7 +772,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
 /* auth guard — admin only */
 if(window.API){ API.guard('admin'); }
 window.AMS_PANEL_MODE='admin_ops';
-const ADMIN_ALLOWED_PAGES=new Set(['creditNotes','dashboard','allocation','numbers','managers','agents','clients','smsReport','cliSearch','smsDetail','clientStats','agentStats','managerStats','rangeStats','numberStats','providerSummary','test','payMgmt','chatAccounts','failedSms','apiManagement']);
+const ADMIN_ALLOWED_PAGES=new Set(['creditNotes','dashboard','allocation','numbers','managers','agents','clients','requests','smsReport','cliSearch','smsDetail','clientStats','agentStats','managerStats','rangeStats','numberStats','providerSummary','test','payMgmt','chatAccounts','failedSms','apiManagement']);
 function normalizePanelPage(id){ id=String(id||'dashboard'); return ADMIN_ALLOWED_PAGES.has(id)?id:'dashboard'; }
 function applyPanelSplitUi(){
   if(window.AMS_PANEL_MODE!=='admin_light') return;
@@ -3285,7 +3288,12 @@ async function loadAdminPageData(page){
     if(page==='test'){ await ensureAdminRates(); await loadTestNumbers(); return renderTest(); }
     if(page==='payMgmt') return loadPayMgmt();
     if(page==='chatAccounts') return buildChatAccounts();
-        if(page==='managers') return buildUserPage('manager');
+        if(page==='requests'){ if(window.NexoraRequests) return window.NexoraRequests.mount(); return; }
+    /* keep the Request Panel counter fresh without opening the page */
+    if(window.NexoraRequests && !window.__nxrBadgeTouched){ window.__nxrBadgeTouched=1;
+      window.NexoraRequests.pendingCount().then(n=>{ const b=document.getElementById('nxrNavBadge');
+        if(b){ b.textContent=n||''; b.style.display=n?'inline-flex':'none'; } }); }
+    if(page==='managers') return buildUserPage('manager');
     if(page==='agents') return buildUserPage('agent');
     if(page==='clients') return buildUserPage('client');
     if(page==='import'){ await ensureAdminRates(); await loadImportBatches(); return refreshNumberDbTools(); }

@@ -41,8 +41,26 @@ const ALLOWED = {
   'video/quicktime': ['.mov'],
   'video/x-msvideo': ['.avi'],
   'video/x-matroska': ['.mkv'],
+  /* images — shown inline in the thread, never as a download link */
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
 };
-const ALLOWED_EXT = new Set(['.txt', '.text', '.csv', '.mp4', '.webm', '.mov', '.avi', '.mkv']);
+const ALLOWED_EXT = new Set(['.txt', '.text', '.csv', '.mp4', '.webm', '.mov', '.avi', '.mkv',
+  '.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+/* Same magic-byte check the Creator flow uses: the browser-supplied mime type
+   is never trusted for what actually gets written to disk. */
+function sniffImage(buf) {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+  if (buf.slice(0, 4).toString('ascii') === 'GIF8') return 'image/gif';
+  return null;
+}
+const IMAGE_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' };
 const BODY_MAX = 4000;
 
 /* ------------------------------------------------------------------ */
@@ -294,10 +312,14 @@ const upload = (() => {
       const ext = path.extname(file.originalname || '').toLowerCase();
       const mime = String(file.mimetype || '').toLowerCase();
       const extOk = ALLOWED_EXT.has(ext);
+      /* browsers report image/jpg for .jpg, application/octet-stream for some
+         pasted blobs, and empty mime for clipboard bitmaps — so accept any
+         image/* mime here and let the magic-byte check decide afterwards. */
       const mimeOk = Object.prototype.hasOwnProperty.call(ALLOWED, mime)
-        || mime.startsWith('video/') || mime.startsWith('text/');
+        || mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('text/')
+        || mime === 'application/octet-stream' || mime === '';
       if (!extOk || !mimeOk) {
-        return cb(new Error('Unsupported file type. Allowed: TXT, CSV and video files.'));
+        return cb(new Error('Unsupported file type. Allowed: images (PNG, JPG, WEBP), TXT, CSV and video files.'));
       }
       cb(null, true);
     },
@@ -665,11 +687,30 @@ module.exports = function mountChatApp(app, deps) {
       if (req.user.role === 'client') return res.status(403).json({ error: 'Not available.' });
       if (!req.file) return res.status(400).json({ error: 'No file received.' });
 
+      /* An image must really be an image: read the first bytes and, when the
+         claim does not hold, delete the file and refuse it. */
+      let mime = String(req.file.mimetype || '').slice(0, 120) || 'application/octet-stream';
+      const ext = path.extname(req.file.filename || '').toLowerCase();
+      if (IMAGE_MIME[ext]) {
+        let head = Buffer.alloc(0);
+        try {
+          const fd = fs.openSync(req.file.path, 'r');
+          const buf = Buffer.alloc(16); const n = fs.readSync(fd, buf, 0, 16, 0); fs.closeSync(fd);
+          head = buf.slice(0, n);
+        } catch (e) { head = Buffer.alloc(0); }
+        const real = sniffImage(head);
+        if (!real) {
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+          return res.status(400).json({ error: 'That file is not a real image. Please choose a PNG, JPG or WEBP picture.' });
+        }
+        mime = real;
+      }
+
       const ins = db.run(
         `INSERT INTO chat_attachments (message_id, conversation_id, uploader_id, orig_name, stored_name, mime, size_bytes, created_at)
          VALUES (NULL, NULL,?,?,?,?,?, datetime('now'))`,
         [req.user.id, safeName(req.file.originalname), req.file.filename,
-         String(req.file.mimetype || '').slice(0, 120), req.file.size || 0]);
+         mime, req.file.size || 0]);
       const id = ins?.lastInsertRowid || db.get('SELECT last_insert_rowid() id')?.id;
       res.json({ ok: true, attachment: {
         id, name: safeName(req.file.originalname), mime: req.file.mimetype,
@@ -698,9 +739,14 @@ module.exports = function mountChatApp(app, deps) {
       }
       if (!fs.existsSync(full)) return res.status(410).json({ error: 'File is no longer available.' });
 
+      const isImage = /^image\//i.test(String(a.mime || ''));
       res.setHeader('Content-Type', a.mime || 'application/octet-stream');
-      res.setHeader('Content-Disposition', `attachment; filename="${safeName(a.orig_name)}"`);
+      /* images open inside the thread, so send them inline (never a forced
+         download); everything else keeps the existing download behaviour. */
+      res.setHeader('Content-Disposition',
+        (isImage ? 'inline' : 'attachment') + `; filename="${safeName(a.orig_name)}"`);
       res.setHeader('X-Content-Type-Options', 'nosniff');
+      if (isImage) res.setHeader('Cache-Control', 'private, max-age=300');
       fs.createReadStream(full).pipe(res);
     } catch (e) { res.status(500).json({ error: 'Download failed.' }); }
   });

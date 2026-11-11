@@ -1,0 +1,7 @@
+node_modules/
+backend/data.sqlite
+backend/data.sqlite-shm
+backend/data.sqlite-wal
+backend/creator-uploads/
+backend/backups/
+.env

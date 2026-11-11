@@ -278,3 +278,130 @@ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar):
 .nx-tab.on{ background:linear-gradient(180deg,#1a8bff,#0a63f0); }
 .nx-mt tr.cur td{ background:#0a6ff5 !important; }
 @media (max-height:760px){ html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar)::before{ display:none !important; } html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar)::after{ height:70px; } }
+
+/* ============================================================================
+   FIT FIXES (2026-11-11) — 2 rules only, added AFTER the supplied design so the
+   look stays exactly as supplied. They repair two layout breakages, nothing else:
+   1) Manager panel: .content is a direct child of <body> with margin-left:240px
+      and content-box sizing, so it grew 30px past the viewport (horizontal
+      scrollbar). box-sizing + max-width keeps it inside the screen.
+   2) Brand tile: .logo had overflow:hidden while the img was larger than the
+      tile, so the new NEXORA mark was clipped on its right edge.
+   ========================================================================== */
+html body.ams-panel > .content{
+  box-sizing:border-box!important;
+  width:auto!important;
+  max-width:calc(100vw - var(--nx-sbw, 240px))!important;
+}
+html body.ams-panel .logo{
+  overflow:visible!important;
+}
+html body.ams-panel .logo img{
+  width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;
+}
+/* 3) Brand wordmark under the mark. The bundled per-page stylesheet uses
+      `body:is(.ams-light,.ams-dark) :is(... h1 ...){display:none!important}`,
+      which has a HIGHER specificity than the simpler brand rule in the supplied
+      theme, so Manager lost its NEXORA wordmark. Same selector shape, higher
+      specificity — only `display` changes, the supplied look is untouched. */
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.brand,.sb-brand,.brand-text,.brand-logo) h1{
+  display:block!important;
+}
+
+/* ============================================================================
+   THEME CONSISTENCY FIXES (2026-11-11)
+   Audit findings, one rule each, no redesign:
+   A) Light theme painted a WHITE box + white glow behind the sidebar mark
+      (ams-panel.css / ams.css force background:#fff on .sb-logo img). Dark
+      theme had no box, and the mark was 54px in light vs 104px in dark.
+   B) .sb-nav had `scrollbar-*` but no overflow, so its scrollbar properties
+      were ignored and the nav never scrolled in a controlled way.
+   C) CLI Search analytics cards sit outside #page-dashboard, so the theme's
+      light background never reached them → white text on a white card.
+   D) The sidebar's fixed background gradients are position:fixed, so the
+      artwork stayed put while the nav scrolled underneath it.
+   ========================================================================== */
+
+/* A — one transparent, identical mark in BOTH themes, both 48px */
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sb-logo,.brand .logo,.rail .logo,.logo) img,
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) img.ams-sms-logo-img{
+  background:none!important;
+  background-color:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+  width:48px!important;
+  height:48px!important;
+  max-width:48px!important;
+  max-height:48px!important;
+  object-fit:contain!important;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sb-logo,.brand .logo,.rail .logo,.logo){
+  width:48px!important;
+  height:48px!important;
+  max-width:48px!important;
+  max-height:48px!important;
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+  box-sizing:content-box;
+}
+
+/* B — the nav is the single scrolling surface it was always meant to be */
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .sb-nav{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .sb-nav::-webkit-scrollbar{ width:6px; }
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .sb-nav::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.24); border-radius:999px;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .sb-nav::-webkit-scrollbar-track{ background:transparent; }
+
+/* D — keep the sidebar artwork attached to the sidebar itself, so it scrolls
+      with its own surface and never looks detached from the items */
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar){
+  background-attachment:scroll,scroll,scroll!important;
+}
+
+/* C — every .stat-card gets the same readable surface in both themes,
+      wherever it lives (dashboard, CLI analytics, stats pages) */
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card,
+html body.ams-panel.ams-ui.ams-light .stat-card.dash-metric{
+  background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(226,238,255,.94))!important;
+  border:1px solid var(--nx-line)!important;
+  box-shadow:0 6px 18px rgba(12,48,110,.08)!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card :is(p,h3,span,.stat-info *,.dash-go),
+html body.ams-panel.ams-ui.ams-light .stat-card.dash-metric :is(p,h3,span,.stat-info *){
+  color:#123a78!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card h3,
+html body.ams-panel.ams-ui.ams-light .stat-card.dash-metric h3{
+  color:#0b2a6b!important; font-weight:800!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card p,
+html body.ams-panel.ams-ui.ams-light .stat-card.dash-metric p{
+  color:#3f5f96!important; font-weight:700!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card .stat-info span,
+html body.ams-panel.ams-ui.ams-light .stat-card.dash-metric .stat-info span{
+  color:#5b7bab!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card .dash-go{
+  background:radial-gradient(circle at 30% 25%,#3b86f7,#0f4ec9)!important;
+  color:#fff!important; border:0!important;
+}
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card .dash-go svg{ stroke:#fff!important; }
+
+/* dark keeps its existing, already-correct surface — only the same geometry */
+html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card{
+  border:1px solid #1e2d45!important;
+}
+html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card :is(h3){ color:#f1f5f9!important; }
+html body.ams-panel.ams-ui.ams-dark .stats-grid .stat-card :is(p,span,.stat-info span){ color:#94a3b8!important; }
