@@ -14,7 +14,7 @@
    ========================================================================== */
 'use strict';
 
-const VERSION = 'nx-pwa-v2-20261111';
+const VERSION = 'nx-pwa-v3-20261112';
 const SHELL = VERSION + '-shell';
 
 /* The minimum needed to boot the login screen offline. Everything else is
@@ -69,12 +69,19 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
   if (NEVER_CACHE.some((re) => re.test(url.pathname))) return;
+  // Explicit public-shell allowlist. Never cache arbitrary same-origin GETs,
+  // runtime branding responses, private downloads or authenticated requests.
+  if (req.headers.has('Authorization')) return;
+  const publicShell = url.pathname === '/panel-login' || url.pathname === '/manifest.webmanifest'
+    || /^\/assets\/.*\.(?:css|js|png|jpg|jpeg|webp|svg|ico|woff2?)$/i.test(url.pathname)
+    || url.pathname === '/api.js';
+  if (!publicShell) return;
 
   event.respondWith((async () => {
     try {
       /* network-first: the panel always shows freshly deployed files */
       const fresh = await fetch(req);
-      if (fresh && fresh.ok && (fresh.type === 'basic' || fresh.type === 'default')) {
+      if (fresh && fresh.ok && !/no-store|private/i.test(fresh.headers.get('Cache-Control') || '') && (fresh.type === 'basic' || fresh.type === 'default')) {
         const copy = fresh.clone();
         caches.open(SHELL).then((c) => c.put(req, copy)).catch(() => {});
       }

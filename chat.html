@@ -2,6 +2,7 @@
 <html lang="en" class="ams-light">
 <head><script src="/assets/ams-storage.js?v=ams-20261026-fullrebrand-final"></script>
 <meta charset="UTF-8" />
+<script>if(location.pathname.indexOf("/chat-app/")===0){document.addEventListener("DOMContentLoaded",function(){document.querySelector("link[rel=manifest]").href="/chat-app/manifest.webmanifest";});}</script>
 <!-- viewport-fit=cover lets the composer respect the iPhone home-indicator inset;
      interactive-widget=resizes-content makes Android Chrome shrink the layout
      when the keyboard opens, so the composer stays visible. -->
@@ -15,25 +16,18 @@
 /* Auth guard — chat is for Admin / Manager / Agent only (spec 3A).
    Opening this URL directly without a valid session bounces to the login. */
 (function(){
-  var allowed = { admin:1, manager:1, agent:1 };
-  try{
-    var token = sessionStorage.getItem('ams_token') || localStorage.getItem('ams_token');
-    var role  = sessionStorage.getItem('ams_role')  || localStorage.getItem('ams_role');
-    if(!token || !allowed[role]){ location.replace('/panel-login'); return; }
-    fetch('/api/me',{ headers:{ Authorization:'Bearer '+token } })
-      .then(function(r){ if(!r.ok) throw new Error('auth'); return r.json(); })
-      .then(function(u){
-        if(!u || !allowed[u.role]) throw new Error('role');
-        document.documentElement.style.visibility='visible';
-        window.__CHAT_BOOT = { token: token, role: u.role, me: u };
-        if (window.__chatStart) window.__chatStart();
-      })
-      .catch(function(){
-        sessionStorage.clear();
-        ['ams_token','ams_role','ams_user','ams_name'].forEach(function(k){ localStorage.removeItem(k); });
-        location.replace('/panel-login');
-      });
-  }catch(e){ location.replace('/panel-login'); }
+  var standaloneApp=location.pathname.indexOf('/chat-app')===0;
+  var allowed={admin:1,manager:1,agent:1,supervisor:1,support:1};
+  try {
+    var panelRole=sessionStorage.getItem('ams_role')||localStorage.getItem('ams_role');
+    var useChatSession=standaloneApp||panelRole!=='admin';
+    var token=useChatSession?(sessionStorage.getItem('nx_chat_token')||localStorage.getItem('nx_chat_token')):(sessionStorage.getItem('ams_token')||localStorage.getItem('ams_token'));
+    if(!token){location.replace(useChatSession?'/chat-app/login':'/panel-login');return;}
+    fetch(useChatSession?'/api/chat-app/me':'/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'})
+      .then(function(r){if(!r.ok)throw Error('auth');return r.json();})
+      .then(function(u){if(!allowed[u.role])throw Error('role');window.__CHAT_BOOT={token:token,role:u.role,me:u};document.documentElement.style.visibility='visible';if(window.__chatStart)window.__chatStart();})
+      .catch(function(){if(useChatSession){sessionStorage.removeItem('nx_chat_token');localStorage.removeItem('nx_chat_token');}location.replace(useChatSession?'/chat-app/login':'/panel-login');});
+  }catch(e){location.replace('/chat-app/login');}
 })();
 </script>
 <script>
@@ -53,8 +47,8 @@
 })();
 </script>
 <style id="route-auth-hide">html{visibility:hidden;}</style>
-<link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/>
-<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
+<link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261112"/>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261112" defer></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -603,7 +597,7 @@ function msgHTML(m, pos, enter){
      was refused by the server even for the intended recipient. */
   var foot = '<span class="mfoot'+(inline ? '' : ' row')+'"><time datetime="'+esc(m.created_at||'')+'" title="'+esc(fullTime(m.created_at))+'">'
            + esc(timeOf(m.created_at))+'</time>'+tickHTML(m)+'</span>';
-  var who = (!m.mine && current && current.supervised && (pos === 'first' || pos === 'solo'))
+  var who = (!m.mine && (pos === 'first' || pos === 'solo'))
           ? '<div class="who">'+esc(m.sender_name||('user#'+m.sender_id))+'</div>' : '';
   return '<div class="msg'+(m.mine?' mine':'')+(emo?' emoji-only':'')+(enter?' enter':'')+'" data-id="'+esc(m.id)+'" data-pos="'+pos+'">'
        + who
@@ -692,7 +686,7 @@ function openImageLight(src, alt){
   if(!box){
     box = document.createElement('div');
     box.id = 'imgLight'; box.className = 'imgl';
-    box.innerHTML = '<button type="button" class="imgl-x" aria-label="Close preview">'+ico('x')+'</button><img alt="" />';
+    box.innerHTML = '<a id="imageLightDownload" download style="position:absolute;bottom:24px;left:24px;background:#fff;color:#123;padding:10px 18px;border-radius:8px">Download</a><button type="button" class="imgl-x" aria-label="Close preview">'+ico('x')+'</button><img alt="" />';
     document.body.appendChild(box);
     box.addEventListener('click', function(e){
       if(e.target === box || e.target.closest('.imgl-x')){ box.classList.remove('show'); }
@@ -703,6 +697,7 @@ function openImageLight(src, alt){
   }
   var im = box.querySelector('img');
   im.src = src; im.alt = alt || '';
+  var dl=document.getElementById('imageLightDownload');if(dl){dl.href=src;dl.download=alt||'image';}
   box.classList.add('show');
 }
 
@@ -1124,7 +1119,9 @@ function startStream(){
       var m = JSON.parse(ev.data);
       /* Sound only for a live inbound message from the other party. The
          dedupe below also stops a reconnect replay from sounding twice. */
+      m.mine=!!(window.__CHAT_BOOT&&m.sender_id===window.__CHAT_BOOT.me.id);
       Sound.incoming(m);
+      if(window.NexoraChatNotify)window.NexoraChatNotify(m).catch(function(){});
       if(!current || m.conversation_id !== current.id){ loadConvs(true); return; }
       if(!current._msgs){ ui(current.id).dirty = true; return; }   /* still loading: the fetch will be repeated */
       if(current._msgs.some(function(x){ return x.id===m.id; })) return;
@@ -1654,15 +1651,18 @@ function start(){
   }).then(function(){
     // open the single natural counterpart automatically, like a messenger would
     // (only a real conversation — a participant row has no id yet)
-    if(convs.length === 1 && convs[0].id != null) openConv(convs[0].id);
+    var requested=Number(new URLSearchParams(location.search).get('conversation'));
+    if(requested&&convById(requested))openConv(requested);else if(convs.length === 1 && convs[0].id != null) openConv(convs[0].id);
     startStream();
     setInterval(function(){ if(document.visibilityState !== 'hidden') loadConvs(true); }, 30000);
   }).catch(function(e){ showErr(e.message); });
 }
 
+window.NexoraChatOpen=function(id){loadConvs(true).then(function(){if(convById(Number(id)))openConv(Number(id));});};
 if (window.__CHAT_BOOT) start();
 else window.__chatStart = start;
 })();
 </script>
+<script src="/assets/chat-app-ui.js?v=chat-20261112"></script>
 </body>
 </html>

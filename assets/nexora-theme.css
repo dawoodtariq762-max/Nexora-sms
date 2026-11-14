@@ -436,3 +436,23 @@ mirrors the same mobile gutter the other panels already use. Desktop untouched. 
     overflow-x:hidden!important;
   }
 }
+
+/* One sidebar scroll owner: artwork uses the local scrolling area, not a
+   fixed parent behind a separately scrolling transparent navigation pane. */
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar){
+  overflow-y:auto!important; overflow-x:hidden!important;
+  background-attachment:local,local,local!important;
+  overscroll-behavior:contain; scrollbar-width:thin;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sidebar,.rail,.appbar) > *{
+  flex-shrink:0!important;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) .sb-nav{
+  flex:1 0 auto!important; overflow:visible!important; max-height:none!important;
+}
+html body.ams-panel.ams-ui:is(.ams-light,.ams-dark) :is(.sb-section,.sb-sec,.rsec){
+  color:#aac6f6!important; line-height:1.5;
+}
+/* Letter badges are white on blue, like their SVG counterparts. */
+html body.ams-panel.ams-ui.ams-light .stats-grid .stat-card .dash-go{color:#fff!important;}
+html body.ams-panel.ams-ui.ams-light .stat-card .stat-info span{color:#47638c!important;}

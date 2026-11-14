@@ -343,8 +343,8 @@ body .content{padding:20px 14px!important;}
 
 <script src="/assets/number-copy.js?v=ams-20261026-fullrebrand-final"></script>
 <link rel="stylesheet" href="/assets/ams-motion.css?v=ams-20261026-fullrebrand-final"/><script src="/assets/ams-motion.js?v=ams-20261026-fullrebrand-final" defer></script>
-<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261026-fullrebrand-final"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script>
-<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
+<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261026-fullrebrand-final"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261112"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261112" defer></script>
 </head>
 <body class="ams-light ams-panel ams-ui">
 <button class="mgr-mobile-menu" type="button" onclick="toggleManagerSidebar()">☰</button><div class="mgr-mobile-overlay" id="mgrMobileOverlay" onclick="closeManagerSidebar()"></div>
@@ -573,7 +573,7 @@ body .content{padding:20px 14px!important;}
       <select class="sel-lg" id="testRange"><option value="">Select Range</option></select>
       <input type="text" id="testCli" placeholder="Filter by CLI" oninput="renderTest()" style="min-width:200px"/>
       <button type="button" class="ams-btn ams-blue"  onclick="renderTest()" data-tip="Filters" title="Filters" aria-label="Filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
-      <button type="button" class="ams-btn"  onclick="document.getElementById('testCli').value='';document.getElementById('testRange').value='';renderTest()" data-tip="Reset" title="Reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+      <button type="button" class="ams-btn"  onclick="NexoraTestReset()" data-tip="Reset" title="Reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
     </div></div>
     <div class="grid2" style="grid-template-columns:1fr 1.3fr">
       <div><h3 style="margin-bottom:12px;font-size:15px">SMS Test Numbers</h3>
@@ -1638,5 +1638,6 @@ document.addEventListener('click',function(e){if(e.target.closest('[data-page]')
 </script>
 
 <script src="/assets/extapi-ui.js?v=ams-20261026-fullrebrand-final"></script>
+<script src="/assets/test-panel-controls.js?v=chat-20261112"></script>
 </body>
 </html>

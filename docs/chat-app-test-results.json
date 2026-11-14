@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-14T08:26:38.897Z",
+  "checks": [
+    "Existing Manager/Agent accounts remain unconfigured; no default codes",
+    "Unconfigured users, panel-password Chat login, Clients and non-Admin management rejected",
+    "Admin assigns six-digit hashed codes; normal listings expose no code",
+    "Five distinct Chat identities authenticate; Chat tokens cannot access Panel APIs",
+    "Per-owner four-member support groups are stable, isolated; Agent gets assigned Manager direct chat",
+    "Real SSE fanout and reply delivery across Admin/Supervisor/Support/Agent; Manager direct replies persist with correct sender names",
+    "Support group unread cursors are per recipient, not globally cleared by another reader",
+    "Deactivation, reactivation and delete/reassign invalidate existing Chat sessions",
+    "Private image and TXT attachments use existing storage, message links and group authorization",
+    "Persistent WhatsApp/update settings validate trusted URLs and reject unsafe URLs",
+    "Server-side page sizes, All, range filtering and non-overlapping pagination use full pool",
+    "Public registration is Agent-only, validates code, blocks pending login, activates code on approval",
+    "Standalone Test Panel also supports All, actual range dropdown filtering and Reset Filter",
+    "Chromium Agent sidebar, Agent/Manager/Admin/Client size selectors, All, filtered Last Page and reset controls operate",
+    "Separate Chat login, system-side UI reply/history, independent manifest and configured channel link verified in Chromium",
+    "Chrome-injected push invokes actual worker handler once with correct conversation URL; notification display spied, not an OS/provider test",
+    "Admin Security Code Management and WhatsApp Management screens load saved data",
+    "Chat application regression suite completed"
+  ]
+}

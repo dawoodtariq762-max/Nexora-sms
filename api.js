@@ -283,6 +283,7 @@
       if (!opts) return;
       var want = '|' + opts.join('|') + '|';
       document.querySelectorAll('select[id$="Len"]').forEach(function(sel) {
+        if(sel.id==='testNumLen')return; // Test Panel owns its exact 25/50/100/500/All options
         var curVals = '|' + Array.prototype.map.call(sel.options, function(o) { return o.value; }).join('|') + '|';
         if (curVals === want) return; /* already correct — idempotent */
         var cur = sel.value;

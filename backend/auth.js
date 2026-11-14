@@ -38,7 +38,7 @@ function authRequired(req, res, next) {
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     req.user = jwt.verify(token, SECRET);
-    if (req.user && req.user.type === 'chat') {
+    if (req.user && ['chat','chat_app'].includes(req.user.type)) {
       return res.status(403).json({ error: 'Chat tokens cannot be used for panel access' });
     }
     if (perUserRateLimit(req, res)) return;
@@ -55,6 +55,7 @@ function chatAuthRequired(req, res, next) {
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     req.user = jwt.verify(token, SECRET);
+    if(req.user.type==='chat_app')return res.status(403).json({error:'Chat application tokens cannot access panel services'});
     if (perUserRateLimit(req, res)) return;
 
     // P21: If caller is accessing chat via panel token and role is agent, check chat unlock

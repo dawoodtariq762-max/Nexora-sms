@@ -24,6 +24,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const domain = require('./chatApplication');
 
 /* ------------------------------------------------------------------ */
 /* config                                                              */
@@ -100,7 +101,7 @@ function pushTo(uid, event, data) {
   if (!s) return 0;
   let n = 0;
   for (const e of s) {
-    try { e.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); n++; }
+    try { if(e.user)domain.validate(e.user); e.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); n++; }
     catch (_) { /* dead socket, swept up on close */ }
   }
   return n;
@@ -258,42 +259,21 @@ function getOrCreateConversation(aId, bId) {
   return db.get('SELECT * FROM chat_conversations WHERE a_id=? AND b_id=? ORDER BY id LIMIT 1', [aId, bId]);
 }
 
-function canAccessConversation(user, conv) {
-  if (!conv) return false;
-  if (conv.a_id === user.id || conv.b_id === user.id) return true;
-  // Admin supervises the whole tree (spec 3B.3)
-  if (user.role === 'admin') return true;
-  return false;
-}
+function canAccessConversation(user, conv) { return domain.access(user, conv); }
 
 function unreadCount(convId, userId) {
-  const r = db.get(
-    `SELECT COUNT(*) c FROM chat_messages
-      WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL`, [convId, userId]);
-  return +(r?.c || 0);
+ const cursor=db.get('SELECT last_id FROM chat_read_cursors WHERE conversation_id=? AND actor_id=?',[convId,userId]);
+ const conv=db.get('SELECT kind FROM chat_conversations WHERE id=?',[convId]);
+ return +(cursor||conv?.kind==='support' ? db.get('SELECT COUNT(*) c FROM chat_messages WHERE conversation_id=? AND sender_id!=? AND id>?',[convId,userId,cursor?.last_id||0])?.c : db.get('SELECT COUNT(*) c FROM chat_messages WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL',[convId,userId])?.c)||0;
 }
 
-function convRow(conv, user) {
-  const otherId = conv.a_id === user.id ? conv.b_id : conv.a_id;
-  const other = db.get('SELECT id, username, name, role FROM users WHERE id=?', [otherId]) || {};
-  const last = db.get(
-    `SELECT body, sender_id, created_at FROM chat_messages
-      WHERE conversation_id=? ORDER BY id DESC LIMIT 1`, [conv.id]);
-  const isAdminView = user.role === 'admin' && conv.a_id !== user.id && conv.b_id !== user.id;
-  const a = db.get('SELECT id, username, name, role FROM users WHERE id=?', [conv.a_id]) || {};
-  const b = db.get('SELECT id, username, name, role FROM users WHERE id=?', [conv.b_id]) || {};
-  return {
-    id: conv.id,
-    kind: conv.kind,
-    other: { id: other.id, username: other.username, name: other.name, role: other.role },
-    participants: [{ id: a.id, username: a.username, name: a.name, role: a.role },
-                   { id: b.id, username: b.username, name: b.name, role: b.role }],
-    supervised: isAdminView,          // admin reading someone else's thread
-    last_message: last ? { body: String(last.body || '').slice(0, 120), sender_id: last.sender_id, at: isoZ(last.created_at) } : null,
-    last_message_at: isoZ(conv.last_message_at),
-    created_at: isoZ(conv.created_at),
-    unread: unreadCount(conv.id, user.id),
-  };
+function convRow(conv,user){
+ const participants=domain.members(conv).map(id=>domain.identity(id)).filter(Boolean);
+ const group=db.get('SELECT owner_id FROM chat_support_groups WHERE conversation_id=?',[conv.id]);
+ const owner=group?domain.identity(group.owner_id):null;
+ const other=conv.kind==='support'?{id:0,name:'NEXORA SMS Support Chat'+(user.role==='admin'||user.id<0?' · '+(owner?.name||''):''),username:'',role:'support'}:domain.identity(conv.a_id===user.id?conv.b_id:conv.a_id)||{};
+ const last=db.get('SELECT body,sender_id,created_at FROM chat_messages WHERE conversation_id=? ORDER BY id DESC LIMIT 1',[conv.id]);
+ return {id:conv.id,kind:conv.kind,other,participants,supervised:conv.kind==='support'||(user.role==='admin'&&![conv.a_id,conv.b_id].includes(user.id)),last_message:last?{body:String(last.body||'').slice(0,120),sender_id:last.sender_id,at:isoZ(last.created_at)}:null,last_message_at:isoZ(conv.last_message_at),created_at:isoZ(conv.created_at),unread:unreadCount(conv.id,user.id)};
 }
 
 /* ------------------------------------------------------------------ */
@@ -361,14 +341,14 @@ module.exports = function mountChatApp(app, deps) {
     try {
       const u = req.user;
       if (u.role === 'client') return res.status(403).json({ error: 'Chat is not available for client accounts.' });
+      domain.provision(u);
       let convs;
       if (u.role === 'admin') {
         convs = db.all(`SELECT * FROM chat_conversations ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 300`);
       } else {
-        convs = db.all(`SELECT * FROM chat_conversations WHERE a_id=? OR b_id=?
-                        ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 300`, [u.id, u.id]);
+        convs = db.all(`SELECT * FROM chat_conversations c WHERE (c.kind!='support' AND (c.a_id=? OR c.b_id=?)) OR EXISTS(SELECT 1 FROM chat_members m WHERE m.conversation_id=c.id AND m.actor_id=?) ORDER BY COALESCE(last_message_at, created_at) DESC LIMIT 300`, [u.id,u.id,u.id]);
       }
-      const rows = convs.map(c => convRow(c, u)).filter(c => canAccessConversation(u, { a_id: c.participants[0].id, b_id: c.participants[1].id }));
+      const rows = convs.filter(c=>canAccessConversation(u,c)).map(c=>convRow(c,u));
       res.json({ ok: true, conversations: rows, total_unread: rows.reduce((s, c) => s + c.unread, 0) });
     } catch (e) { res.status(500).json({ error: 'Could not load conversations.' }); }
   });
@@ -405,6 +385,7 @@ module.exports = function mountChatApp(app, deps) {
         return res.status(403).json({ error: 'Chat is not available for client accounts.' });
       }
 
+      if (u.id<0 || u.type==='chat_app') return res.json({ok:true,participants:[]});
       let people;
       if (u.role === 'agent') {
         /* Own Manager only — identified through the existing parent_id link. */
@@ -465,12 +446,13 @@ module.exports = function mountChatApp(app, deps) {
     try {
       const u = req.user;
       if (u.role === 'client') return res.status(403).json({ error: 'Not available.' });
+      if(u.id<0)return res.status(403).json({error:'Choose an assigned support group.'});
       let targetId = parseInt(req.body?.user_id, 10);
       let target = null;
 
       if (Number.isFinite(targetId) && targetId > 0) {
         target = db.get('SELECT id, username, name, role, active FROM users WHERE id=?', [targetId]);
-        if (!target) return res.status(404).json({ error: 'User not found.' });
+        if (!target || !target.active || !['admin','manager','agent'].includes(target.role)) return res.status(404).json({ error: 'Eligible user not found.' });
         // authorise the pairing (spec 3B)
         const okPair =
           (u.role === 'admin') ||
@@ -530,6 +512,8 @@ module.exports = function mountChatApp(app, deps) {
           delivered_at: isoZ(m.delivered_at),
           read_at: isoZ(m.read_at),
           mine: m.sender_id === req.user.id,
+          sender_name: domain.identity(m.sender_id)?.name || 'Unknown sender',
+          sender_role: domain.identity(m.sender_id)?.role || '',
           attachments: byMsg.get(m.id) || [],
         })),
       });
@@ -562,21 +546,27 @@ module.exports = function mountChatApp(app, deps) {
         clientMsgId = crypto.randomUUID();
       }
 
+      const attachmentIds = [...new Set(attIds.map(Number))];
+      if (attachmentIds.some(n => !Number.isSafeInteger(n) || n < 1 ||
+          !db.get('SELECT id FROM chat_attachments WHERE id=? AND uploader_id=? AND message_id IS NULL', [n, req.user.id]))) {
+        return res.status(400).json({ error: 'An attachment is unavailable or does not belong to you. Please select it again.' });
+      }
+
       const ins = db.run(
         `INSERT INTO chat_messages (conversation_id, sender_id, body, client_msg_id, created_at)
          VALUES (?,?,?,?, datetime('now'))`,
         [id, req.user.id, body, clientMsgId]);
       const msgId = ins?.lastInsertRowid || db.get('SELECT last_insert_rowid() id')?.id;
 
-      for (const aid of attIds) {
-        const n = parseInt(aid, 10);
+      for (const n of attachmentIds) {
         if (Number.isFinite(n)) db.run('UPDATE chat_attachments SET message_id=?, conversation_id=? WHERE id=? AND uploader_id=? AND message_id IS NULL',
           [msgId, id, n, req.user.id]);
       }
 
       db.run(`UPDATE chat_conversations SET last_message_at=datetime('now') WHERE id=?`, [id]);
 
-      const otherId = conv.a_id === req.user.id ? conv.b_id : conv.a_id;
+      const recipients=domain.members(conv).filter(uid=>uid!==req.user.id);
+      const otherId=recipients[0];
 
       /* Delivery is only claimed when the recipient genuinely has a live
          authenticated session. isOnline() reads the presence table, which is
@@ -584,7 +574,7 @@ module.exports = function mountChatApp(app, deps) {
          use — so a message cannot be marked delivered for someone the server
          knows is offline. */
       let delivered = false;
-      if (isOnline(otherId)) {
+      if (recipients.some(uid=>isOnline(uid))) {
         db.run(`UPDATE chat_messages SET delivered_at=datetime('now') WHERE id=? AND delivered_at IS NULL`, [msgId]);
         delivered = true;
       }
@@ -594,11 +584,13 @@ module.exports = function mountChatApp(app, deps) {
         created_at: isoZ(db.get('SELECT created_at FROM chat_messages WHERE id=?', [msgId])?.created_at),
         receipt: delivered ? 'delivered' : 'sent',
         mine: true,                     // lets the composer render the receipt immediately
-        sender_name: (req.user.name || req.user.username || ''),
+        sender_name: domain.identity(req.user.id)?.name || '',
+        sender_role: req.user.role,
         attachments: db.all('SELECT id, orig_name name, mime, size_bytes size FROM chat_attachments WHERE message_id=?', [msgId])
           .map(a => ({ ...a, url: `/api/chatapp/attachments/${a.id}/download` })),
       };
-      pushTo(otherId, 'message', payload);
+      for(const uid of recipients){pushTo(uid,'message',{...payload,mine:false});domain.notify(uid,payload).catch(()=>{});}
+      pushTo(req.user.id,'message',payload);
 
       res.json({ ok: true, message: payload });
     } catch (e) { res.status(500).json({ error: 'Could not send message.' }); }
@@ -612,6 +604,8 @@ module.exports = function mountChatApp(app, deps) {
       if (!conv) return res.status(404).json({ error: 'Conversation not found.' });
       if (!canAccessConversation(req.user, conv)) return res.status(403).json({ error: 'Not authorised.' });
 
+      const lastId=db.get('SELECT MAX(id) id FROM chat_messages WHERE conversation_id=?',[id])?.id||0;
+      db.run('INSERT INTO chat_read_cursors(conversation_id,actor_id,last_id) VALUES(?,?,?) ON CONFLICT(conversation_id,actor_id) DO UPDATE SET last_id=excluded.last_id',[id,req.user.id,lastId]);
       const r = db.run(
         `UPDATE chat_messages SET read_at=datetime('now'), delivered_at=COALESCE(delivered_at, datetime('now'))
           WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL`,
@@ -619,7 +613,7 @@ module.exports = function mountChatApp(app, deps) {
       const n = r && r.changes ? r.changes : 0;
       if (n) {
         const otherId = conv.a_id === req.user.id ? conv.b_id : conv.a_id;
-        pushTo(otherId, 'read', { conversation_id: id, by: req.user.id, count: n });
+        for(const uid of domain.members(conv).filter(uid=>uid!==req.user.id))pushTo(uid, 'read', { conversation_id:id, by:req.user.id, count:n });
       }
       res.json({ ok: true, marked: n });
     } catch (e) { res.status(500).json({ error: 'Could not mark as read.' }); }
@@ -647,7 +641,7 @@ module.exports = function mountChatApp(app, deps) {
     });
     res.write(`event: hello\ndata: ${JSON.stringify({ user_id: req.user.id, at: new Date().toISOString() })}\n\n`);
 
-    const entry = { res };
+    const entry = { res, user:req.user };
     addStream(req.user.id, entry);
 
     /* Presence: this session is live, so (a) record it, (b) deliver anything
@@ -655,7 +649,7 @@ module.exports = function mountChatApp(app, deps) {
     markOnline(req.user.id);
 
     const hb = setInterval(() => {
-      try { res.write(': ping\\n\\n'); touchPresence(req.user.id); } catch (_) {}
+      try { domain.validate(req.user); res.write(': ping\n\n'); touchPresence(req.user.id); } catch (_) { res.end(); }
     }, 25000);
 
     req.on('close', () => {
@@ -713,7 +707,7 @@ module.exports = function mountChatApp(app, deps) {
          mime, req.file.size || 0]);
       const id = ins?.lastInsertRowid || db.get('SELECT last_insert_rowid() id')?.id;
       res.json({ ok: true, attachment: {
-        id, name: safeName(req.file.originalname), mime: req.file.mimetype,
+        id, name: safeName(req.file.originalname), mime,
         size: req.file.size, url: `/api/chatapp/attachments/${id}/download` } });
     } catch (e) { console.error('[chat] upload failed:', e && e.message); res.status(500).json({ error: 'Upload failed.' }); }
   });
@@ -739,15 +733,26 @@ module.exports = function mountChatApp(app, deps) {
       }
       if (!fs.existsSync(full)) return res.status(410).json({ error: 'File is no longer available.' });
 
-      const isImage = /^image\//i.test(String(a.mime || ''));
-      res.setHeader('Content-Type', a.mime || 'application/octet-stream');
+      let mime = a.mime || 'application/octet-stream';
+      // Legacy attachments may carry application/octet-stream or image/jpg.
+      // Sniff image bytes instead of sending a non-image Content-Type.
+      if (IMAGE_MIME[path.extname(a.stored_name).toLowerCase()] || /^image\//i.test(mime)) {
+        const fd = fs.openSync(full, 'r');
+        let real;
+        try { const head = Buffer.alloc(16); const n = fs.readSync(fd, head, 0, 16, 0); real = sniffImage(head.subarray(0, n)); }
+        finally { fs.closeSync(fd); }
+        if (!real) return res.status(415).json({ error: 'Stored image is not a supported image.' });
+        mime = real;
+      }
+      const isImage = /^image\//i.test(mime);
+      res.setHeader('Content-Type', mime);
       /* images open inside the thread, so send them inline (never a forced
          download); everything else keeps the existing download behaviour. */
       res.setHeader('Content-Disposition',
         (isImage ? 'inline' : 'attachment') + `; filename="${safeName(a.orig_name)}"`);
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      if (isImage) res.setHeader('Cache-Control', 'private, max-age=300');
-      fs.createReadStream(full).pipe(res);
+      res.setHeader('Cache-Control', 'private, no-store');
+      fs.createReadStream(full).on('error', () => { if (!res.headersSent) res.status(500).end(); else res.destroy(); }).pipe(res);
     } catch (e) { res.status(500).json({ error: 'Download failed.' }); }
   });
 
@@ -767,7 +772,7 @@ module.exports = function mountChatApp(app, deps) {
       const attBy = new Map();
       for (const a of att) { if (!attBy.has(a.message_id)) attBy.set(a.message_id, []); attBy.get(a.message_id).push(a.orig_name); }
 
-      const who = (uid) => { const u = db.get('SELECT username,name,role FROM users WHERE id=?', [uid]); return u ? (u.name || u.username) : ('user#' + uid); };
+      const who = (uid) => { const u = domain.identity(uid); return u ? (u.name || u.username) : ('user#' + uid); };
       const A = who(conv.a_id), B = who(conv.b_id);
 
       let out = '';

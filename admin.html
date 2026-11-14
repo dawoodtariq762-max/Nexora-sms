@@ -306,8 +306,8 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
 
 <script src="/assets/number-copy.js?v=ams-20261026-fullrebrand-final"></script>
 <link rel="stylesheet" href="/assets/ams-motion.css?v=ams-20261026-fullrebrand-final"/><script src="/assets/ams-motion.js?v=ams-20261026-fullrebrand-final" defer></script>
-<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261101-admin-report-fixes1"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script><script src="/assets/nexora-requests.js?v=nx-20261111b" defer></script>
-<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
+<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261101-admin-report-fixes1"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261112"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script><script src="/assets/nexora-requests.js?v=nx-20261111b" defer></script>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261112" defer></script>
 </head>
 <body class="ams-light ams-panel ams-ui">
 <div class="layout">
@@ -614,7 +614,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
           <div id="testRangeContainer" style="display:inline-block;min-width:180px"></div>
           <input type="text" id="testCliFilter" placeholder="Filter by CLI (e.g. TikTok)" oninput="renderTest()" style="min-width:220px"/>
           <button type="button" class="ams-btn ams-blue"  onclick="renderTest()" data-tip="Filters" title="Filters" aria-label="Filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
-          <button type="button" class="ams-btn"  onclick="document.getElementById('testCliFilter').value='';document.getElementById('testRange').value='';renderTest()" data-tip="Reset" title="Reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+          <button type="button" class="ams-btn"  onclick="NexoraTestReset()" data-tip="Reset" title="Reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
         </div></div>
         <div class="card" style="margin-bottom:16px">
           <div class="card-head"><div><h3>Demo Traffic Generator</h3></div><button type="button" class="ams-btn danger"  onclick="clearAdminFakeTraffic()" data-tip="Clear demo traffic" title="Clear demo traffic" aria-label="Clear demo traffic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg></button></div>
@@ -633,7 +633,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
           <div>
             <h3 style="margin-bottom:12px;font-size:16px">SMS Test Numbers</h3>
             <div class="table-wrap" style="padding:14px 16px;margin-top:0"><div class="table-controls">
-              <div class="tc-left"><label>Show Records:</label><select id="testNumLen" onchange="renderTest()"><option>10</option><option selected>25</option><option>50</option></select>
+              <div class="tc-left"><label>Show Records:</label><select id="testNumLen" onchange="renderTest()"><option selected>25</option><option>50</option><option>100</option><option>500</option><option>All</option></select>
                 <div class="exp-btns"><button type="button" class="ams-btn ams-blue"  data-tip="Copy" title="Copy" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button type="button" class="ams-btn ams-blue"  data-tip="Download CSV" title="Download CSV" aria-label="Download CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="ams-btn ams-green"  data-tip="Download Excel" title="Download Excel" aria-label="Download Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div></div>
               <div class="tc-right"><label>Range:</label><div id="testNumRangeContainer" style="display:inline-block;min-width:150px"></div><label>Search:</label><input type="text" id="testNumSearch" oninput="renderTest()" placeholder="Search..."/></div>
             </div></div>
@@ -651,7 +651,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
           <div>
             <h3 style="margin-bottom:12px;font-size:16px">Recent SMS Test</h3>
             <div class="table-wrap" style="padding:14px 16px;margin-top:0"><div class="table-controls">
-              <div class="tc-left"><label>Show Records:</label><select id="testRecLen" onchange="renderTest()"><option>10</option><option selected>25</option><option>50</option></select>
+              <div class="tc-left"><label>Show Records:</label><select id="testRecLen" onchange="renderTest()"><option selected>25</option><option>50</option><option>100</option><option>500</option><option>All</option></select>
                 <div class="exp-btns"><button type="button" class="ams-btn ams-blue"  data-tip="Copy" title="Copy" aria-label="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><button type="button" class="ams-btn ams-blue"  data-tip="Download CSV" title="Download CSV" aria-label="Download CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button type="button" class="ams-btn ams-green"  data-tip="Download Excel" title="Download Excel" aria-label="Download Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div></div>
               <div class="tc-right"><label>Search:</label><input type="text" id="testRecSearch" oninput="renderTest()" placeholder="Search..."/></div>
             </div></div>
@@ -773,6 +773,7 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
 if(window.API){ API.guard('admin'); }
 window.AMS_PANEL_MODE='admin_ops';
 const ADMIN_ALLOWED_PAGES=new Set(['creditNotes','dashboard','allocation','numbers','managers','agents','clients','requests','smsReport','cliSearch','smsDetail','clientStats','agentStats','managerStats','rangeStats','numberStats','providerSummary','test','payMgmt','chatAccounts','failedSms','apiManagement']);
+ADMIN_ALLOWED_PAGES.add('chatSecurity');ADMIN_ALLOWED_PAGES.add('whatsappManagement');
 function normalizePanelPage(id){ id=String(id||'dashboard'); return ADMIN_ALLOWED_PAGES.has(id)?id:'dashboard'; }
 function applyPanelSplitUi(){
   if(window.AMS_PANEL_MODE!=='admin_light') return;
@@ -876,7 +877,7 @@ function renderAdminNumbersRangeFilter(){
   const liveRanges = (ratesData||[]).map(r=>r.name).filter(Boolean);
   liveRanges.sort((a,b)=>a.localeCompare(b));
   if (window.renderSearchSelect && document.getElementById('numRangeContainer')) {
-    const items = liveRanges.map(r => ({ value: r, label: r }));
+    const items = [{value:'',label:'All Ranges'}].concat(liveRanges.map(r => ({ value: r, label: r })));
     window.renderSearchSelect('numRangeContainer', {
       id: 'numRange',
       placeholder: 'Select Range',
@@ -2199,7 +2200,7 @@ async function loadRates(){ try{ ratesData=await API.get('/ranges'); }catch(e){ 
   fillSelect('importRange',liveRanges);
   fillSelect('testImportRange',liveRanges);
   if (window.renderSearchSelect && document.getElementById('testRangeContainer')) {
-    const items = liveRanges.map(r => ({ value: r, label: r }));
+    const items = [{value:'',label:'All Ranges'}].concat(liveRanges.map(r => ({ value: r, label: r })));
     window.renderSearchSelect('testRangeContainer', {
       id: 'testRange',
       placeholder: 'Select Range',
@@ -3529,5 +3530,7 @@ setTimeout(()=>{Promise.allSettled([ensureAdminManagers()]);},250);
 </script>
 <script>document.addEventListener("keydown",function(e){if(e.key==="Escape"&&typeof closeSidebar==="function")closeSidebar();});</script>
 <script src="/assets/extapi-ui.js?v=ams-20261026-fullrebrand-final"></script>
+<script src="/assets/test-panel-controls.js?v=chat-20261112"></script>
+<script src="/assets/chat-admin.js?v=chat-20261112"></script>
 </body>
 </html>

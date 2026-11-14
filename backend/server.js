@@ -461,6 +461,11 @@ function sendFrontendPage(res, file) { res.sendFile(path.join(FRONTEND_ROOT, fil
 // Legacy /login and /login.html are permanently redirected so old bookmarks keep working.
 app.get('/', (req, res) => res.redirect(302, '/panel-login'));
 /* Chat opens in its own tab (spec 3A) — served at /chat */
+app.get(/^\/chat-app$/, (req,res) => res.redirect(302, '/chat-app/'));
+app.get('/chat-app/', (req,res) => sendFrontendPage(res, 'chat.html'));
+app.get('/chat-app/login', (req,res) => sendFrontendPage(res, 'chat-login.html'));
+app.get('/chat-app/manifest.webmanifest', (req,res) => res.sendFile(path.join(FRONTEND_ROOT,'chat-manifest.webmanifest')));
+app.get('/chat-app/sw.js', (req,res) => { res.set('Cache-Control','no-cache'); res.sendFile(path.join(FRONTEND_ROOT,'chat-sw.js')); });
 app.get('/chat', (req, res) => sendFrontendPage(res, 'chat.html'));
 app.get('/chat.html', (req, res) => res.redirect(301, '/chat'));
 app.get('/panel-login', (req, res) => sendFrontendPage(res, 'login.html'));
@@ -511,8 +516,17 @@ app.get('/branding-login.html', (req, res) => res.redirect(301, '/branding-login
 app.get('/branding', (req, res) => sendFrontendPage(res, 'branding.html'));
 app.get('/branding.html', (req, res) => res.redirect(301, '/branding'));
 
-// serve frontend assets and static files from project root
-app.use(express.static(FRONTEND_ROOT));
+// Never expose backend code, databases or private upload directories through
+// the project-root static handler. Existing page routes above remain unchanged.
+app.use('/assets', express.static(path.join(FRONTEND_ROOT, 'assets')));
+app.use('/uploads/payment-screenshots', express.static(path.join(FRONTEND_ROOT, 'uploads/payment-screenshots')));
+const publicRootFiles = new Set(['api.js', 'sw.js', 'manifest.webmanifest']);
+app.use((req, res, next) => {
+  const file = req.path.slice(1);
+  if (!publicRootFiles.has(file)) return next();
+  if (file === 'sw.js') res.setHeader('Cache-Control', 'no-cache');
+  return res.sendFile(path.join(FRONTEND_ROOT, file));
+});
 
 /* Account PIN and Complaints; legacy route names remain for compatibility. */
 require('./chat')(app, { authRequired, chatAuthRequired, requireRole, logAction, SECRET });
@@ -524,7 +538,9 @@ const brandingPanel = require('./branding')(app, { db, SECRET, logAction });
 /* Per-user REST API credentials + read-only /api/v1 data API */
 require('./extapi')(app, { authRequired, requireRole, logAction, rateLimit });
 /* Chat system: Admin <-> Manager <-> Agent, SSE delivery, attachments */
-require('./chatapp')(app, { authRequired, requireRole, logAction, rateLimit });
+const chatApplication = require('./chatApplication');
+chatApplication.mount(app, { rateLimit, logAction });
+require('./chatapp')(app, { authRequired: chatApplication.auth, requireRole, logAction, rateLimit });
 /* Creator Account registration + Admin Request Panel.
    Memory-buffered upload so the screenshot can be validated by magic bytes
    before anything touches the disk. Nothing else in the app is affected. */
@@ -2364,6 +2380,23 @@ app.delete('/api/ranges/:id', authRequired, requireRole('admin'), (req, res) => 
     res.json({ ok: true, deleted_range: 1, deleted_numbers: numberResult.deleted || 0, deleted_sms: (numberResult.deleted_sms || 0) + rangeSmsDeleted, preserved_sms: (numberResult.preserved_sms || 0) + rangeSmsPreserved });
 });
 
+// All is an explicit whole-pool request. Reuse the existing cursor-streamed
+// JSON architecture instead of materializing/caching a second huge copy.
+app.get('/api/test-numbers', (req,res,next) => {
+  if(String(req.query.limit||'').toLowerCase()!=='all'||req.query.ranges_only==='1')return next();
+  return authRequired(req,res,()=>{
+    const where=['t.active=1'],args=[];
+    const search=String(req.query.search||'').trim().toLowerCase(),range=String(req.query.range||'').trim();
+    if(search){where.push('(LOWER(t.test_number) LIKE ? OR LOWER(r.name) LIKE ?)');args.push('%'+search+'%','%'+search+'%');}
+    if(range){where.push('r.name=?');args.push(range);}
+    const base='FROM range_test_numbers t JOIN ranges r ON r.id=t.range_id WHERE '+where.join(' AND ');
+    const total=db.get('SELECT COUNT(*) c '+base,args)?.c||0;
+    sendPagedStreaming(res,{total,page:1,limit:Math.max(1,total),totalPages:1},
+      `SELECT t.id,t.range_id,t.test_number AS number,t.label,t.created_at,r.name AS range_name,r.prefix,
+       COALESCE(NULLIF(r.rate_30_45,''),NULLIF(r.rate_7_1,''),'Ask') AS payout ${base} ORDER BY r.name COLLATE NOCASE,t.id DESC`,args);
+  });
+});
+
 app.get('/api/test-numbers', authRequired, (req, res) => cachedJson(req, res, 3000, () => {
   // Test panel numbers are separate from actual panel numbers. UI should show only range name + number.
   /* ranges_only=1 → just the distinct range names of the active test pool. Used by the
@@ -2382,7 +2415,7 @@ app.get('/api/test-numbers', authRequired, (req, res) => cachedJson(req, res, 30
   const paged=req.query.paged||req.query.page||req.query.limit;
   const total=+(db.get(`SELECT COUNT(*) c ${base}`,params)?.c||0);
   const limitRaw=String(req.query.limit||'100');
-  const limit=limitRaw.toLowerCase()==='all'?Math.max(1,Math.min(total||1,10000)):Math.max(1,Math.min(parseInt(limitRaw||'500',10)||500,2000));
+  const limit=limitRaw.toLowerCase()==='all'?Math.max(1,total||1):Math.max(1,Math.min(parseInt(limitRaw||'500',10)||500,2000));
   const totalPages=Math.max(1,Math.ceil(total/limit));
   const page=Math.min(Math.max(1,parseInt(req.query.page||'1',10)||1),totalPages);
   const offset=(page-1)*limit;
@@ -7206,7 +7239,7 @@ const PORT = process.env.PORT || 4000;
   createTables();
   seed();
   /* Creator Account registration table (idempotent, additive only) */
-  try { creatorRequests.ensureSchema(); } catch (e) { console.warn('[creator] schema:', e.message); }
+  try { creatorRequests.ensureSchema(); chatApplication.schema(); } catch (e) { console.error('[creator/chat] migration failed:', e.message); process.exit(1); }
   /* Section 7: authoritative real-provider links (idempotent; exact matches only). */
   syncRangeProviderLinks();
   // PHASE-2 optional process split: AMS_ROLE=api runs web-only (no timers);

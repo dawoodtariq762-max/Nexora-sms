@@ -57,7 +57,8 @@ module.exports = function creatorRequests(app, ctx) {
   /* ------------------------------------------------------------------ *
    * Upload location — outside the static web root on purpose.
    * ------------------------------------------------------------------ */
-  const DEFAULT_UPLOAD_DIR = path.join(__dirname, 'creator-uploads');
+  const LEGACY_UPLOAD_DIR = path.join(__dirname, 'creator-uploads');
+  const DEFAULT_UPLOAD_DIR = path.join(process.env.DATA_DIR || path.dirname(process.env.DB_FILE || path.join(__dirname, 'data.sqlite')), 'creator-uploads');
 
   /* Make sure a directory exists AND is writable. A deployment sometimes ships
      CREATOR_UPLOAD_DIR pointing at a path the panel user cannot write (root
@@ -133,6 +134,7 @@ module.exports = function creatorRequests(app, ctx) {
     const dirs = [
       UPLOAD_DIR,
       path.resolve(DEFAULT_UPLOAD_DIR),
+      path.resolve(LEGACY_UPLOAD_DIR),
       path.resolve(path.join(process.env.DATA_DIR || __dirname, 'creator-uploads')),
     ];
     for (const d of dirs) {
@@ -200,6 +202,9 @@ module.exports = function creatorRequests(app, ctx) {
     const phoneCode = str(b.phone_code, 8);
     const phoneRaw = str(b.phone, 32);
     const role = str(b.requested_role, 16).toLowerCase();
+    const chatCode=String(b.chat_security_code||'');
+    if(role!=='agent')return res.status(400).json({error:'Public registration is for Agent accounts only.'});
+    if(!/^\d{6}$/.test(chatCode))return res.status(400).json({error:'Chat Security Code must contain exactly six numeric digits.',field:'chat_security_code'});
     const cli = str(b.cli, 190);
     const note = str(b.note, 2000);
     const password = String(b.password == null ? '' : b.password);
@@ -301,12 +306,12 @@ module.exports = function creatorRequests(app, ctx) {
         `INSERT INTO creator_requests
            (full_name, username, email, country, phone_code, phone, requested_role,
             password_hash, cli, note, screenshot_path, screenshot_orig, screenshot_mime,
-            screenshot_size, screenshot_width, screenshot_height, status, reg_ip, reg_user_agent)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Pending', ?, ?)`,
+            screenshot_size, screenshot_width, screenshot_height, status, reg_ip, reg_user_agent, chat_code_hash)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Pending', ?, ?, ?)`,
         [fullName, username, email, country, phoneCode, phoneRaw, role,
          hash, cli, note, stored,
          str(file.originalname, 200), realType,
-         file.buffer.length, 0, 0, ip, str(req.headers['user-agent'], 300)]
+         file.buffer.length, 0, 0, ip, str(req.headers['user-agent'], 300), bcrypt.hashSync(chatCode,12)]
       );
       res.status(201).json({
         ok: true,
@@ -341,12 +346,20 @@ module.exports = function creatorRequests(app, ctx) {
       });
     }
 
-    const type = r.screenshot_mime && ALLOWED[r.screenshot_mime] ? r.screenshot_mime : 'application/octet-stream';
+    // Old rows can lack MIME metadata. Determine the type from actual bytes,
+    // without rewriting historical records or trusting filenames.
+    let type;
+    try {
+      const fd = fs.openSync(full, 'r');
+      try { const head = Buffer.alloc(16); const n = fs.readSync(fd, head, 0, 16, 0); type = sniff(head.subarray(0, n)); }
+      finally { fs.closeSync(fd); }
+    } catch (e) { return res.status(500).json({ error: 'Screenshot cannot be read from storage.' }); }
+    if (!type) return res.status(415).json({ error: 'Stored screenshot is not a supported image.' });
     res.setHeader('Content-Type', type);
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Disposition', 'inline' + (r.screenshot_orig ? `; filename="${String(r.screenshot_orig).replace(/["\\]/g, '')}"` : ''));
-    res.setHeader('Cache-Control', 'private, max-age=60');
-    fs.createReadStream(full).pipe(res);
+    res.setHeader('Content-Disposition', 'inline' + (r.screenshot_orig ? `; filename="${String(r.screenshot_orig).replace(/[^a-zA-Z0-9._ -]/g, '_')}"` : ''));
+    res.setHeader('Cache-Control', 'private, no-store');
+    fs.createReadStream(full).on('error', () => { if (!res.headersSent) res.status(500).end(); else res.destroy(); }).pipe(res);
   });
 
   /* ------------------------------------------------------------------ *
@@ -411,19 +424,24 @@ module.exports = function creatorRequests(app, ctx) {
 
     const review = str((req.body || {}).review_note, 500);
     try {
+      db.exec('BEGIN IMMEDIATE');
+      /* Account, code activation and approval are one atomic change. */
       /* the EXISTING users table + role model is used unchanged */
       const info = db.run(
         'INSERT INTO users (username,password,role,name,email,contact,parent_id,active) VALUES (?,?,?,?,?,?,?,1)',
         [r.username, r.password_hash, r.requested_role, r.full_name, r.email, (r.phone_code || '') + r.phone, null]
       );
       const newId = info.lastInsertRowid;
+      if(r.requested_role==='agent'&&r.chat_code_hash)db.run('INSERT INTO chat_app_codes(user_id,hash,active) VALUES(?,?,1)',[newId,r.chat_code_hash]);
       db.run(
         "UPDATE creator_requests SET status='Approved', reviewed_by=?, reviewed_at=datetime('now'), review_note=?, created_user_id=? WHERE id=?",
         [req.user.id, review, newId, r.id]
       );
+      db.exec('COMMIT');
       try { logAction(req, 'creator_request_approve', 'creator_requests', { id: r.id, username: r.username, role: r.requested_role }); } catch (_) {}
       res.json({ ok: true, user_id: newId, message: `${r.requested_role === 'manager' ? 'Manager' : 'Agent'} account “${r.username}” created and activated.` });
     } catch (e) {
+      try { db.exec('ROLLBACK'); } catch (_) {}
       res.status(500).json({ error: 'Could not create the account: ' + e.message });
     }
   });

@@ -330,8 +330,8 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
 
 <script src="/assets/number-copy.js?v=ams-20261026-fullrebrand-final"></script>
 <link rel="stylesheet" href="/assets/ams-motion.css?v=ams-20261026-fullrebrand-final"/><script src="/assets/ams-motion.js?v=ams-20261026-fullrebrand-final" defer></script>
-<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261026-fullrebrand-final"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261111b"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script>
-<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
+<link rel="stylesheet" href="/branding/runtime.css"/><script src="/branding/runtime.js" defer></script><link rel="stylesheet" href="/assets/ams-panel.css?v=ams-20261026-fullrebrand-final"/><link rel="stylesheet" href="/assets/ams-unify.css?v=ams-20261026-unify2"/><script src="/assets/ams-cli-search.js?v=ams-20261026-fullrebrand-final" defer></script><link rel="stylesheet" href="/assets/nexora-theme.css?v=nx-20261112"/><script src="/assets/nexora-dashboard.js?v=nx-20261111b" defer></script>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261112" defer></script>
 </head>
 <body class="ams-light ams-panel ams-ui">
 <div class="layout">
@@ -340,7 +340,8 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
     <div class="logo"><img class="ams-sms-logo-img" data-brand-logo src="/assets/nexora-logo-square.png?v=nx-logo-20261111" alt="NEXORA" /></div>
     <div class="brand-text"><h1 data-brand="name">NEXORA</h1><small>SMS Panel</small></div>
     <nav class="rail-nav sb-nav">
-      <div class="ritem active nav-item" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span class="lbl">Dashboard</span></div>
+      <div class="ritem nav-item" data-page="test"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 12h8"/></svg><span class="lbl">Test Panel</span></div>
+<div class="ritem active nav-item" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span class="lbl">Dashboard</span></div>
       <div class="ritem nav-item" data-page="extapi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg><span class="lbl">REST API</span></div>
 
       <div class="ritem nav-item" id="pSms" onclick="toggleSub('sSms','pSms')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span class="lbl">SMS Numbers</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -486,8 +487,28 @@ thead th{font-size:11.5px!important;letter-spacing:.25px!important;}
       </section>
 
       <!-- BULK ALLOC -->
-      <!-- SMS TEST PANEL (Agent) — same structure/masking as the existing Client/Manager Test Panel -->
-      </section>
+</section>
+    <section class="page" id="page-test">
+      <div class="page-head"><div><h2>SMS Test Panel</h2><div class="breadcrumb"><b>Home</b> › Test Panel</div></div>
+        <div class="head-actions"><span class="masknote">CLI &amp; SMS masked (Client)</span></div></div>
+      <div class="toolbar"><div class="filter-row">
+        <div id="testRangeContainer" style="display:inline-block;min-width:180px"></div>
+        <button type="button" class="ams-btn ams-blue"  onclick="renderTest()" data-tip="Filters" title="Filters" aria-label="Filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <button type="button" class="ams-btn"  onclick="if(window.setSearchDropdownValue) setSearchDropdownValue('testRange','','Select Range'); const tr=document.getElementById('testRange'); if(tr) tr.value=''; renderTest()" data-tip="Reset" title="Reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+        <span class="muted" style="font-size:11.5px">(Range filter applies only to Test Numbers)</span>
+      </div></div>
+      <div class="grid2" style="grid-template-columns:1fr 1.3fr">
+        <div><h3 style="margin-bottom:12px;font-size:15px">SMS Test Numbers</h3>
+          <div class="table-wrap" style="margin-top:0"><div class="tscroll"><table>
+            <thead><tr><th>Range</th><th>Test Number</th></tr></thead><tbody id="tnBody"></tbody></table></div>
+          <div class="table-foot"><div class="info" id="tnInfo"></div><div class="pagination" id="tnPager"></div></div></div></div>
+        <div><h3 style="margin-bottom:12px;font-size:15px">Recent SMS Test</h3>
+          <div class="toolbar" style="margin-bottom:12px;padding:12px 14px"><div class="filter-row" style="margin:0"><input type="text" id="testCli" placeholder="Filter by CLI" oninput="renderTest()" style="min-width:180px"/></div></div>
+          <div class="table-wrap" style="margin-top:0"><div class="tscroll"><table>
+            <thead><tr><th>Date</th><th>Range</th><th>Number</th><th>CLI</th><th>SMS</th></tr></thead><tbody id="trBody"></tbody></table></div>
+          <div class="table-foot"><div class="info" id="trInfo"></div><div class="pagination" id="trPager"></div></div></div></div>
+      </div>
+    </section>
 
       <section class="page" id="page-bulkAlloc">
         <div class="page-head"><div><h2>SMS Range Allocation</h2><div class="breadcrumb"><b>SMS Numbers</b> › Range Allocation</div></div></div>
@@ -821,6 +842,7 @@ async function showPage(id,el){
   document.getElementById('pageTitle').textContent=(el?el.querySelector('.lbl').textContent:'Dashboard');
   window.scrollTo({top:0,behavior:'smooth'});
 
+  if(id==='test'){await loadTestPanelRangeList();renderTestRangeSelect();return renderTest();}
   if(id === 'payment'){
     const isUnlocked = isChatPaymentUnlocked();
     const lockView = document.getElementById('paymentLockView');
@@ -915,7 +937,7 @@ function renderTestRangeSelect(){
   if (window.renderSearchSelect && document.getElementById('testRangeContainer')) {
     window.renderSearchSelect('testRangeContainer', {
       id: 'testRange', placeholder: 'Select Range', searchPlaceholder: 'Search range...',
-      items: list.map(r => ({ value: r, label: r })),
+      items: [{value:'',label:'All Ranges'}].concat(list.map(r => ({ value: r, label: r }))),
       value: value,
       onChange: () => renderTest()
     });
@@ -1923,6 +1945,7 @@ setTimeout(async()=>{try{await Promise.allSettled([loadRateCard(),loadClients()]
 </script>
 
 <script src="/assets/extapi-ui.js?v=ams-20261026-fullrebrand-final"></script>
+<script src="/assets/test-panel-controls.js?v=chat-20261112"></script>
 </body>
 </html>
 

@@ -169,7 +169,7 @@ input[type=file]{display:none;}
 .done p{color:var(--nx-muted);font-size:13.5px;max-width:460px;margin:0 auto 18px;}
 @media(prefers-reduced-motion:reduce){ .spin{animation:none;} }
 </style>
-<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261111" defer></script>
+<link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#0b1e42" /><meta name="mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /><meta name="apple-mobile-web-app-title" content="SMS" /><link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png" /><script src="/assets/pwa-install.js?v=nx-pwa-20261112" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -213,12 +213,15 @@ input[type=file]{display:none;}
             <input type="password" id="confirm_password" name="confirm_password" placeholder="Repeat your password" maxlength="100" /></div>
           <div class="f full"><label for="requested_role">Requested Account Type <span class="req">*</span></label>
             <select id="requested_role" name="requested_role">
-              <option value="">Select account type…</option>
+
               <option value="agent">Agent</option>
-              <option value="manager">Manager</option>
+
             </select></div>
         </div>
 
+        <div class="f full"><label for="chat_security_code">Chat Security Code <span class="req">*</span></label>
+          <input type="password" id="chat_security_code" name="chat_security_code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="new-password" />
+          <p>Your Chat Security Code will be used to log in to the NEXORA Chat application. It is different from your main panel password.</p></div>
         <div class="sec-title">Application Testing Proof</div>
         <div class="proof">
           <div class="notice">
@@ -395,7 +398,7 @@ input[type=file]{display:none;}
   var FIELDS = [
     ['full_name', 'Full Name'], ['username', 'Username'], ['email', 'Email Address'],
     ['country', 'Country'], ['phone', 'Phone Number'], ['password', 'Password'],
-    ['confirm_password', 'Confirm Password'], ['requested_role', 'Requested Account Type'],
+    ['confirm_password', 'Confirm Password'], ['chat_security_code','Chat Security Code'], ['requested_role', 'Requested Account Type'],
     ['cli', 'CLI'], ['screenshot', 'Application Testing Screenshot']
   ];
   function showAlert(msg, kind, fields) {
@@ -429,6 +432,7 @@ input[type=file]{display:none;}
     if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(email)) { $('email').classList.add('bad'); ok = false; }
     var un = $('username').value.trim();
     if (!/^[a-zA-Z0-9._-]{3,32}$/.test(un)) { $('username').classList.add('bad'); ok = false; }
+    if(!/^\d{6}$/.test($('chat_security_code').value)){$('chat_security_code').classList.add('bad');showAlert('Chat Security Code must contain exactly six numeric digits.','err');return false;}
     if ($('password').value.length < 6) { $('password').classList.add('bad'); ok = false; }
     if ($('password').value !== $('confirm_password').value) { $('confirm_password').classList.add('bad'); ok = false; }
     if (!ok) { showAlert('Please fix the highlighted fields (valid email, username 3–32 characters, password at least 6 characters and matching).', 'err'); return false; }
@@ -436,7 +440,7 @@ input[type=file]{display:none;}
     return true;
   }
 
-  ['full_name','username','email','phone','password','confirm_password','cli'].forEach(function (id) {
+  ['full_name','username','email','phone','password','confirm_password','chat_security_code','cli'].forEach(function (id) {
     $(id).addEventListener('input', function () { this.classList.remove('bad'); });
   });
   ['country','requested_role'].forEach(function (id) {
@@ -456,6 +460,7 @@ input[type=file]{display:none;}
     fd.append('phone_code', $('phone_code').value);
     fd.append('phone', $('phone').value.trim());
     fd.append('requested_role', $('requested_role').value);
+    fd.append('chat_security_code', $('chat_security_code').value);
     fd.append('password', $('password').value);
     fd.append('confirm_password', $('confirm_password').value);
     fd.append('cli', $('cli').value);

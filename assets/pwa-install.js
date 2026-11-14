@@ -13,9 +13,10 @@
    ========================================================================== */
 (function () {
   'use strict';
+  if(location.pathname.indexOf('/chat-app/')===0)return; // independent Chat PWA
 
   var DISMISS_KEY = 'nx_pwa_dismissed_at';
-  var SNOOZE_DAYS = 14;
+  var SNOOZE_DAYS = Infinity; // respect a dismissal until the user explicitly reopens installation
   var deferred = null;
   var installed = false;
 
@@ -106,7 +107,7 @@
       '#nxInstall{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));',
       'z-index:9998;width:min(440px,calc(100vw - 24px));background:#fff;border:1px solid #dbe6f6;border-radius:16px;',
       'box-shadow:0 18px 48px rgba(8,32,80,.22);padding:14px;display:none;font-family:Inter,system-ui,sans-serif;',
-      'animation:nxiIn .22s ease-out}',
+      '}',
       '#nxInstall.show{display:block}',
       '#nxInstall .nxi-row{display:flex;align-items:center;gap:12px}',
       '#nxInstall .nxi-logo{border-radius:11px;flex:none}',
@@ -146,6 +147,7 @@
 
   function show() {
     if (installed || isStandalone() || snoozed()) return;
+    if (!document.body) { document.addEventListener('DOMContentLoaded', show, { once:true }); return; }
     var el = card();
     el.classList.add('show');
   }
@@ -188,8 +190,8 @@
     if (!btn || !deferred) return;
     btn.disabled = true;
     btn.textContent = 'Opening installer…';
-    deferred.prompt();
-    deferred.userChoice.then(function (choice) {
+    var promptEvent = deferred;
+    Promise.resolve().then(function () { return promptEvent.prompt(); }).then(function () { return promptEvent.userChoice; }).then(function (choice) {
       /* Only claim success when the browser says so. */
       if (choice && choice.outcome === 'accepted') {
         btn.textContent = 'Installing…';
@@ -210,12 +212,32 @@
 
   /* Manual re-entry point (used by the login page link). */
   window.NexoraPWA = {
-    prompt: function () { if (deferred) { document.dispatchEvent(new Event('noop')); } show(); },
+    prompt: function () {
+      if (installed || isStandalone()) return;
+      try { localStorage.removeItem(DISMISS_KEY); } catch(e) {}
+      if (isIOS()) showIOS(); else if (deferred) show();
+    },
     canInstall: function () { return !!deferred; },
     isStandalone: isStandalone,
     showIOS: showIOS
   };
 
+  // A home-screen launch should resume a still-valid panel session, not
+  // strand an already signed-in user at the login form. Normal login visits
+  // are unchanged, and the server still verifies the existing JWT.
+  function resumeInstalledSession() {
+    if (location.pathname !== '/panel-login' || new URLSearchParams(location.search).get('source') !== 'pwa') return;
+    var token = '';
+    try { token = sessionStorage.getItem('ams_token') || sessionStorage.getItem('ms_token')
+      || localStorage.getItem('ams_token') || localStorage.getItem('ms_token') || ''; } catch(e) {}
+    if (!token) return;
+    fetch('/api/me', { headers:{ Authorization:'Bearer ' + token }, cache:'no-store' })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(user) {
+        if (user && ['admin','manager','agent','client','test'].indexOf(user.role) !== -1) location.replace('/' + user.role);
+      }).catch(function() { /* Offline/expired sessions keep the existing login form. */ });
+  }
+  resumeInstalledSession();
   registerSW();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { showIOS(); });
